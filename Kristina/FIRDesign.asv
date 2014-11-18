@@ -1,6 +1,6 @@
-Ts = 0.01;
+Ts = 0.002;
 Wn = [1*(2*pi*Ts/pi) 3*(2*pi*Ts/pi)];
-b = fir1(40, Wn, 'bandpass');
+b = fir1(30, Wn, 'bandpass');
 [h,w] = freqz(b,1,1000);
 
 % f = [0 0.6 0.6 0.8 0.8 1];
