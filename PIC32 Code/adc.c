@@ -37,7 +37,7 @@ void initspi(void) {
 	SPI2CONbits.MSTEN = 1; // enable master mode
 	SPI2CONbits.CKE = 1; // set clock-to-data timing (data centered on rising SCK edge) 
 	SPI2CONbits.ON = 1; // turn SPI on
-	SPI2CONbits.MODE32 = 1;
+	SPI2CONbits.MODE32 = 1; // use 32-bit mode
 }
 
 // send and receive via SPI
