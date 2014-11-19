@@ -33,6 +33,13 @@ void initspi(void) {
 	SPI2CONbits.MODE32 = 1;
 }
 
+// send and receive via SPI
+int spi_send_receive(signed short sendX, signed short sendY) {
+	SPI2BUF = ((sendX << 16) | (sendY & 0xFFFF)); // send data to slave
+	while (!SPI2STATbits.SPIBUSY); // wait until received buffer fills, indicating data received 
+	return SPI2BUF; // return received data and clear the read buffer full
+}
+
 // initialize ADC
 void initadc(int channel) {
 	AD1CHSbits.CHOSA = channel; // select which channel
