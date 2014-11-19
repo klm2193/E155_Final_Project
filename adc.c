@@ -44,5 +44,7 @@ int main(void) {
 	initadc(11);
 	while(TMR3 < duration){
 		sample = readadc();
+		TMR3 = 0; // Reset timer
+		// Then do SPI stuff ??
 	}
 }
