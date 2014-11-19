@@ -18,7 +18,7 @@ void initTimers(void) {
 	//	bit 0:	unused
 	T3CON = 0b1000000001100000;
 }
-
+   
 
 void initadc(int channel) {
 	AD1CHSbits.CHOSA = channel; // select which channel
