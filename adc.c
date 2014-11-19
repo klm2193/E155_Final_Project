@@ -37,7 +37,12 @@ int readadc(void) {
 }
 
 int main(void) {
+	initTimers();
+	TMR3 = 0; // Reset timer
+	int duration = 4;
 	int sample;
 	initadc(11);
-	sample = readadc();
+	while(TMR3 < duration){
+		sample = readadc();
+	}
 }
