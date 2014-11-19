@@ -1,5 +1,12 @@
 #include <P32xxxx.h>
 
+// function prototypes!
+void initTimers(void);
+void initspi(void);
+int spi_send_receive(signed short sendX, signed short sendY);
+void initadc(int channel);
+int readadc(void) ;
+
 // initialize timers
 void initTimers(void) {
 	
