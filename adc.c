@@ -32,7 +32,7 @@ int readadc(void) {
 	AD1CON1bits.SAMP = 0; // end sampling, start conversion
 	while (!AD1CON1bits.DONE); // wait until DONE
 	AD1CON1bits.SAMP = 1; // resume sampling
-	AD1CON1bits.DONE = 0; // clear DONE flag jkjl
+	AD1CON1bits.DONE = 0; // clear DONE flag
 	return ADC1BUF0; // return result
 }
 
