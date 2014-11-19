@@ -1,5 +1,6 @@
 #include <P32xxxx.h>
 
+// initialize timers
 void initTimers(void) {
 	
 	//	Assumes peripheral clock at 5MHz
@@ -18,8 +19,21 @@ void initTimers(void) {
 	//	bit 0:	unused
 	T3CON = 0b1000000001100000;
 }
-   
 
+// intialize SPI
+void initspi(void) {
+	signed short junk;
+
+	SPI2CONbits.ON = 0; // disable SPI to reset any previous state
+	junk = SPI2BUF; // read SPI buffer to clear the receive buffer
+	SPI2BRG = 7; //set BAUD rate to 1.25MHz, with Pclk at 20MHz 
+	SPI2CONbits.MSTEN = 1; // enable master mode
+	SPI2CONbits.CKE = 1; // set clock-to-data timing (data centered on rising SCK edge) 
+	SPI2CONbits.ON = 1; // turn SPI on
+	SPI2CONbits.MODE32 = 1;
+}
+
+// initialize ADC
 void initadc(int channel) {
 	AD1CHSbits.CHOSA = channel; // select which channel
 	AD1PCFGCLR = 1 << channel; // configure input pin
@@ -28,6 +42,7 @@ void initadc(int channel) {
 	AD1CON1bits.DONE = 0; // clear DONE flag
 }
 
+// read ADC
 int readadc(void) {
 	AD1CON1bits.SAMP = 0; // end sampling, start conversion
 	while (!AD1CON1bits.DONE); // wait until DONE
