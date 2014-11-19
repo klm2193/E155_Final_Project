@@ -1,4 +1,7 @@
 // signal processing code for FPGA
+module signal_processing(input logic clk);
+
+endmodule
 
 module spi_slave(input logic sck, // from master 
 					  input logic sdo, // from master
