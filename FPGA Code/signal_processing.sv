@@ -7,8 +7,11 @@ module finalProject(input logic clk, sck, sdo, reset,
 endmodule
 
 // signal processing code for FPGA
-module signal_processing(input logic clk, reset);
-
+module signal_processing(input logic clk, reset,
+								 input logic [9:0] voltage,
+								 input logic [29:0] a, // FIR filter coefficients
+								 output logic [9:0] filtered);
+	
 endmodule
 
 module spi_slave(input logic sck, // from master 
