@@ -7,6 +7,14 @@ module signal_processing(input logic clk, reset, sck, sdo,
 	spi_slave ss(sck,sdo,sdi,reset,d,q,voltage);
 endmodule
 
+module filter(input logic clk, reset,
+			  input logic [9:0] voltage,
+			  output logic [9:0] filtered);
+	logic [31:0] a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
+	all, a12, a13, a14, a15, a16, a17, a18, a19, a20,
+	a21, a22, a23, a24, a25, a26, a27, a28, a29, a30;
+	
+
 module spi_slave(input logic sck, // from master 
 					  input logic sdo, // from master
 					  output logic sdi, // to master
