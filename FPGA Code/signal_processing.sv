@@ -31,7 +31,7 @@ module filter(input logic clk, reset,
 			
 		endcase
 		
-	assign filteredSignal = multiplier * voltage;
+	assign filteredSignal = filteredSignal + multiplier * voltage;
 	
 endmodule
 	
