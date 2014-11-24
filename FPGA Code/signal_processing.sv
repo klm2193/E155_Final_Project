@@ -19,6 +19,26 @@ module filter(input logic clk, reset,
 	
 	logic [9:0] filteredSignal;
 	
+	always_comb
+		begin
+			a0 = -(32'sd0.0020);
+			a1 = -(32'sd0.0002);
+			a2 = 32'sd0.0017;
+			a3 = 32'sd0.001;
+			a4 = -(32'sd0.0053);
+			a5 = -(32'sd0.0129);
+			a6 = -(32'sd0.0103);
+			a7 = 32'sd0.0066);
+			a8 = 32'sd0.0206;
+			a9 = 32'sd0.0044;
+			a10 = -(32'sd0.0423);
+			a11 = -(32'sd0.0725);
+			a12 = -(32'sd0.0242);
+			a13 = 32'sd0.1139;
+			a14 = 32'sd0.2706;
+			a15 = 32'sd0.3396;
+		end
+	
 	always_ff(@posedge clk)
 		begin
 			v0 <= v1;
