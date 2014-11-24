@@ -11,11 +11,12 @@ module filter(input logic clk, reset,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filtered);
 	logic [31:0] a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
-	all, a12, a13, a14, a15, a16, a17, a18, a19, a20,
-	a21, a22, a23, a24, a25, a26, a27, a28, a29, a30;	
+	all, a12, a13, a14, a15;
+	
 	logic [9:0] v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10,
 	vll, v12, v13, v14, v15, v16, v17, v18, v19, v20,
 	v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
+	
 	logic [9:0] filteredSignal;
 	
 	always_ff(@posedge clk)
@@ -50,7 +51,13 @@ module filter(input logic clk, reset,
 			v27 <= v28;
 			v28 <= v29;
 			v29 <= v30;
+			
+			filteredSignal <= a0*(v0+v30) + a1*(v1+v29) + a2*(v2+v28) + a3*(v3+v27) + a4*(v4+v26) + a5*(v5+v25) +
+							  a6*(v6+v24) + a7*(v7+v23) + a8*(v8+v22) + a9*(v9+v21) + a10*(v10+v20) + a11*(v11+v19) +
+							  a12*(v12+v18) + a13*(v13+v17) + a14*(v14+v16) + a15*v15;
 		end
+		
+	
 	
 
 module spi_slave(input logic sck, // from master 
