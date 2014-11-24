@@ -12,28 +12,13 @@ module filter(input logic clk, reset,
 			  output logic [9:0] filtered);
 	logic [31:0] a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
 	all, a12, a13, a14, a15, a16, a17, a18, a19, a20,
-	a21, a22, a23, a24, a25, a26, a27, a28, a29, a30;
-	
-	logic [4:0] multiplierSelect, multiplier;
+	a21, a22, a23, a24, a25, a26, a27, a28, a29, a30;	
 	logic [31:0] filteredSignal;
 	
-	// set multiplier value (selector for a multiplexer)
 	always_ff(@posedge clk)
 		begin
-			multiplierSelect <= multiplierSelect + 1;
-		end
-	
-	// multiplexer to choose multiplier values
-	always_comb
-		case(multiplierSelect)
-			32'd0:		multiplier = a0;
-			32'd1:		multiplier = a1;
 			
-		endcase
-		
-	assign filteredSignal = filteredSignal + multiplier * voltage;
-	
-endmodule
+		end
 	
 
 module spi_slave(input logic sck, // from master 
