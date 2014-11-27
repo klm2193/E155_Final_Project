@@ -7,7 +7,6 @@ module signal_processing(input logic clk, reset, sck, sdo,
 	spi_slave ss(sck,sdo,sdi,reset,d,q,voltage);
 endmodule
 
-// module to apply a digital FIR filter to an input signal
 module filter(input logic clk, reset,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filtered);
@@ -22,22 +21,22 @@ module filter(input logic clk, reset,
 	
 	always_comb
 		begin
-			a0 = -(0.0020);
-			a1 = -(0.0002);
-			a2 = 0.0017;
-			a3 = 0.001;
-			a4 = -(0.0053);
-			a5 = -(0.0129);
-			a6 = -(0.0103);
-			a7 = 0.0066;
-			a8 = 0.0206;
-			a9 = 0.0044;
-			a10 = -(0.0423);
-			a11 = -(0.0725);
-			a12 = -(0.0242);
-			a13 = 0.1139;
-			a14 = 0.2706;
-			a15 = 0.3396;
+			a0 = 0.0032;
+			a1 = 0.0039;
+			a2 = 0.0055;
+			a3 = 0.0081;
+			a4 = 0.0119;
+			a5 = 0.0166;
+			a6 = 0.0222;
+			a7 = 0.0285;
+			a8 = 0.0351;
+			a9 = 0.0419;
+			a10 = 0.0484;
+			a11 = 0.0542;
+			a12 = 0.0592;
+			a13 = 0.0630;
+			a14 = 0.0653;
+			a15 = 0.0661;
 		end
 	
 	always_ff @(posedge clk)
@@ -79,8 +78,8 @@ module filter(input logic clk, reset,
 		end
 		
 endmodule
+	
 
-// SPI slave module
 module spi_slave(input logic sck, // from master 
 					  input logic sdo, // from master
 					  output logic sdi, // to master
@@ -112,33 +111,4 @@ module spi_slave(input logic sck, // from master
 
 	assign sdi = (cnt == 0) ? d[31] : qdelayed;
 
-endmodule
-
-// module to find the peaks and troughs of a signal
-module findPeaksAndTroughs(input  logic clk, reset,
-						   input  logic[9:0] inputSignal,
-						   output logic [9:0] numPeaks, numTroughs);
-						   
-	logic[9:0] pastPast, past, present;
-	
-	always_ff @(posedge clk, posedge reset)
-		begin
-			pastPast <= past;
-			past <= present
-			
-			if (reset)
-				begin
-					numPeaks <= 0;
-					numTroughs <= 0;
-				end
-			
-			if ((pastPast < past) && (present < past))
-				numPeaks <= numPeaks + 1;
-				
-			if ((pastPast > past) && (past < present))
-				numTroughs <= numTroughs +1;
-		end
-		
-	
-						   			   
 endmodule
