@@ -7,6 +7,7 @@ f = [0 0.1 0.1 0.3 0.3 1];
 m = [0 0 1 1 0 0];
 
 % FIR filter:
-b = fir1(30,[0.01 0.35],'bandpass');
+%b = fir1(30,[0.01 0.35],'bandpass');
+b = fir1(30,0.35);
 [h,w]=freqz(b,1,10000);
 plot(f,m,w/pi,abs(h))
