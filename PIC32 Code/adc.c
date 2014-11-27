@@ -1,4 +1,5 @@
 #include <P32xxxx.h>
+#include <plib.h>
 
 // function prototypes!
 void initTimers(void);
@@ -49,7 +50,7 @@ int spi_send_receive(signed short sendX, signed short sendY) {
 
 // initialize ADC
 void initadc(int channel) {
-	AD1CHSbits.CHOSA = channel; // select which channel
+	AD1CHSbits.CH0SA = channel; // select which channel
 	AD1PCFGCLR = 1 << channel; // configure input pin
 	AD1CON1bits.ON = 1; // turn ADC on
 	AD1CON1bits.SAMP = 1; // begin sampling
@@ -66,13 +67,17 @@ int readadc(void) {
 }
 
 int main(void) {
+	TRISD = 0xFF00;
+	//TRISB = 0x0000;
+	
 	initTimers();
 	TMR3 = 0; // Reset timer
 	int duration = 4;
 	int sample;
-	initadc(11);
+	initadc(2); // AN2 = RB2
 	while(TMR3 < duration){
 		sample = readadc();
+		PORTD = sample;
 		TMR3 = 0; // Reset timer
 		// Then do SPI stuff ??
 	}
