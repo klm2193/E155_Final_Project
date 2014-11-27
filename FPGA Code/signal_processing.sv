@@ -115,16 +115,22 @@ module spi_slave(input logic sck, // from master
 endmodule
 
 // module to find the peaks and troughs of a signal
-module findPeaksAndTroughs(input  logic clk,
+module findPeaksAndTroughs(input  logic clk, reset,
 						   input  logic[9:0] inputSignal,
 						   output logic [9:0] numPeaks, numTroughs);
 						   
 	logic[9:0] pastPast, past, present;
 	
-	always_ff @(posedge clk)
+	always_ff @(posedge clk, posedge reset)
 		begin
 			pastPast <= past;
 			past <= present
+			
+			if (reset)
+				begin
+					numPeaks <= 0;
+					numTroughs <= 0;
+				end
 			
 			if ((pastPast < past) && (present < past))
 				numPeaks <= numPeaks + 1;
