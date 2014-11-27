@@ -2,7 +2,7 @@ function  lowPassPulse( VoltIn, fs, fc )
 % LOWPASSPULSE takes in a heartbeat signal and downsamples it to 20 Hz and
 % lowpasses it with a cutoff frequency of fc.
 
-fs2 = 20;
+fs2 = 200;
 downfactor = fs/fs2;
 VoltDown = downsample(VoltIn, downfactor);
 hold off
