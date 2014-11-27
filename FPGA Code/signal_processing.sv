@@ -7,6 +7,7 @@ module signal_processing(input logic clk, reset, sck, sdo,
 	spi_slave ss(sck,sdo,sdi,reset,d,q,voltage);
 endmodule
 
+// module to apply a digital FIR filter to an input signal
 module filter(input logic clk, reset,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filtered);
@@ -78,8 +79,8 @@ module filter(input logic clk, reset,
 		end
 		
 endmodule
-	
 
+// SPI slave module
 module spi_slave(input logic sck, // from master 
 					  input logic sdo, // from master
 					  output logic sdi, // to master
@@ -111,4 +112,19 @@ module spi_slave(input logic sck, // from master
 
 	assign sdi = (cnt == 0) ? d[31] : qdelayed;
 
+endmodule
+
+// module to find the peaks and troughs of a signal
+module findPeaksAndTroughs(input  logic clk,
+						   input  logic[9:0] inputSignal,
+						   output logic numPeaks, numTroughs);
+						   
+	logic[9:0] pastPast, past, present;
+	
+	always_ff @(posedge clk)
+		begin
+			pastPast <= past;
+			past <= present
+		end
+						   			   
 endmodule
