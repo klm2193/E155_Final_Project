@@ -117,7 +117,7 @@ endmodule
 // module to find the peaks and troughs of a signal
 module findPeaksAndTroughs(input  logic clk,
 						   input  logic[9:0] inputSignal,
-						   output logic numPeaks, numTroughs);
+						   output logic [9:0] numPeaks, numTroughs);
 						   
 	logic[9:0] pastPast, past, present;
 	
@@ -125,6 +125,14 @@ module findPeaksAndTroughs(input  logic clk,
 		begin
 			pastPast <= past;
 			past <= present
+			
+			if ((pastPast < past) && (present < past))
+				numPeaks <= numPeaks + 1;
+				
+			if ((pastPast > past) && (past < present))
+				numTroughs <= numTroughs +1;
 		end
+		
+	
 						   			   
 endmodule
