@@ -4,7 +4,7 @@
 // function prototypes!
 void initTimers(void);
 void initspi(void);
-int spi_send_receive(signed short sendX, signed short sendY);
+int spi_send_receive(int send);
 void initadc(int channel);
 int readadc(void) ;
 
@@ -42,8 +42,8 @@ void initspi(void) {
 }
 
 // send and receive via SPI
-int spi_send_receive(signed short sendX, signed short sendY) {
-	SPI2BUF = ((sendX << 16) | (sendY & 0xFFFF)); // send data to slave
+int spi_send_receive(int send) {
+	SPI2BUF = (send); // send data to slave
 	while (!SPI2STATbits.SPIBUSY); // wait until received buffer fills, indicating data received 
 	return SPI2BUF; // return received data and clear the read buffer full
 }
@@ -70,15 +70,22 @@ int main(void) {
 	TRISD = 0xFF00;
 	//TRISB = 0x0000;
 	
+	// initialize timers and SPI
 	initTimers();
+	initspi();
+
 	TMR3 = 0; // Reset timer
 	int duration = 4;
 	int sample;
-	initadc(2); // AN2 = RB2
+	int received;
+	initadc(2); // use channel 2 (AN2 is RB2)
+
 	while(TMR3 < duration){
 		sample = readadc();
 		PORTD = sample;
 		TMR3 = 0; // Reset timer
-		// Then do SPI stuff ??
+		
+		// send data over SPI
+		received = spi_send_receive(sample);
 	}
 }
