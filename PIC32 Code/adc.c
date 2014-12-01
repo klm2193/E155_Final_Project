@@ -90,7 +90,7 @@ int main(void) {
 		
 		sample = readadc();
 		PORTD = sample;
-		TMR3 = 0; // Reset timer
+		TMR3 = 0; // reset timer
 			
 		// send data over SPI
 		received = spi_send_receive(sample);
