@@ -124,7 +124,7 @@ module findPeaksAndTroughs(input  logic clk, reset,
 	always_ff @(posedge clk, posedge reset)
 		begin
 			pastPast <= past;
-			past <= present
+			past <= present;
 			
 			if (reset)
 				begin
