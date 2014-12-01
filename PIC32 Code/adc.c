@@ -8,29 +8,32 @@ int spi_send_receive(int send);
 void initadc(int channel);
 int readadc(void) ;
 
+// We want to sample at 200 Hz.
+// Divide clock by 4 and have prescalar of 8.
+
 // initialize timers
 void initTimers(void) {
 	
-	//	Assumes peripheral clock at 5MHz
+	//	Assumes peripheral clock at 10MHz
 
 	//	Use Timer3 for frequency generation	
 	//	T3CON
-	//	bit 15: ON=1: enable timer
-	//	bit 14: FRZ=0: keep running in exception mode
+	//	bit 15: ON = 1: enable timer
+	//	bit 14: FRZ = 0: keep running in exception mode
 	//	bit 13: SIDL = 0: keep running in idle mode
 	//	bit 12-8: unused
-	//	bit 7: 	TGATE=0: disable gated accumulation
-	//	bit 6-4: TCKPS=110: 1:64 prescaler
+	//	bit 7: 	TGATE = 0: disable gated accumulation
+	//	bit 6-4: TCKPS = 011: 1:8 prescaler
 	//	bit	3:	T32=0: 16-bit timer
 	//	bit 2:	unused
-	//	bit 1:	TCS=0: use internal peripheral clock
+	//	bit 1:	TCS = 0: use internal peripheral clock
 	//	bit 0:	unused
-	T3CON = 0b1000000001100000;
+	T3CON = 0b1000000000110000;
 }
 
 // intialize SPI
 void initspi(void) {
-	signed short junk;
+	int junk;
 
 	SPI2CONbits.ON = 0; // disable SPI to reset any previous state
 	junk = SPI2BUF; // read SPI buffer to clear the receive buffer
@@ -80,7 +83,7 @@ int main(void) {
 	int received;
 	initadc(2); // use channel 2 (AN2 is RB2)
 
-	while(TMR3 < duration){
+	while(TMR3 < 6250){
 		sample = readadc();
 		PORTD = sample;
 		TMR3 = 0; // Reset timer
