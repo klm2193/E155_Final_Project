@@ -73,7 +73,7 @@ int main(void) {
 	TRISD = 0xFF00;
 	//TRISB = 0x0000;
 
-	int ADCReadings[1000];
+	int ADCReadings[10000];
 	int i = 0;
 	
 	// initialize timers and SPI
@@ -95,7 +95,7 @@ int main(void) {
 		PORTD = sample;
 		TMR3 = 0; // reset timer
 		
-		if (i < 1000) {	
+		if (i < 10000) {	
 			ADCReadings[i] = sample;
 			i++;
 		}
