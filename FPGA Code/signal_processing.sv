@@ -1,10 +1,10 @@
 // signal processing code for FPGA
 module signal_processing(input logic clk, reset, sck, sdo,
 								 input logic [9:0] voltage,
-								 input logic [29:0] a, // FIR filter coefficients
-								 output logic sdi,
-								 output logic [9:0] filtered);
-	spi_slave ss(sck,sdo,sdi,reset,d,q,voltage);
+								 output logic numPeaks, numTroughs);
+	filter f1(clk, reset, voltage, filtered);
+	spi_slave ss(sck, sdo, sdi, reset, d, q, voltage);
+	findPeaksAndTroughs fpt(clk, reset, filtered, numPeaks, numTroughs);
 endmodule
 
 // module to apply a digital FIR filter to an input signal
@@ -132,11 +132,16 @@ module findPeaksAndTroughs(input  logic clk, reset,
 					numTroughs <= 0;
 				end
 			
-			if ((pastPast < past) && (present < past))
+			else if ((pastPast < past) && (present < past))
 				numPeaks <= numPeaks + 1;
 				
-			if ((pastPast > past) && (past < present))
+			else if ((pastPast > past) && (past < present))
 				numTroughs <= numTroughs +1;
+			else
+				begin
+					numPeaks <= numPeaks;
+					numTroughs <= numTroughs;
+				end
 		end
 
 endmodule
