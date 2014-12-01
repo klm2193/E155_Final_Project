@@ -78,16 +78,20 @@ int main(void) {
 	initspi();
 
 	TMR3 = 0; // Reset timer
-	int duration = 4;
+	int duration = 6250;
 	int sample;
 	int received;
 	initadc(2); // use channel 2 (AN2 is RB2)
 
-	while(TMR3 < 6250){
+	while (1) {
+		while(TMR3 < duration){
+			// wait
+		}
+		
 		sample = readadc();
 		PORTD = sample;
 		TMR3 = 0; // Reset timer
-		
+			
 		// send data over SPI
 		received = spi_send_receive(sample);
 	}
