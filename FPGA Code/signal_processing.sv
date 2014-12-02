@@ -106,14 +106,26 @@ module spi_slave(input logic sck, // from master
 			voltage <= (cnt == 0) ? q[9:0] : voltage;
 		end
 
-	// align sdi to falling edge of sck // load d at the start
+	// align sdi to falling edge of sck
+	// load d at the start
 	always_ff @(negedge sck)
 		qdelayed = q[31];
 
 	assign sdi = (cnt == 0) ? d[31] : qdelayed;
 	
-	endmodule
+endmodule
 
+// module to find peaks
+module findPeaks(input  logic clk, reset,
+				 output logic numPeaks);
+				 
+	always_ff @(posedge clk)
+		begin
+		
+		end
+				 
+endmodule
+	
 // module to find the peaks and troughs of a signal
 module findPeaksAndTroughs(input  logic clk, reset,
 						   input  logic[9:0] inputSignal,
