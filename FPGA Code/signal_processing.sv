@@ -117,11 +117,19 @@ endmodule
 
 // module to find peaks
 module findPeaks(input  logic clk, reset,
+				 input  logic[9:0] newSample, oldSample,
 				 output logic numPeaks);
 				 
+	logic[9:0] newDifference;
+	
 	always_ff @(posedge clk)
 		begin
-		
+			oldSample <= newSample;
+			
+			if ((newSample - oldSample) > 0) // slope is increasing
+				newDifference <= 0;
+			else // slope is decreasing
+				newDifference <= 1;
 		end
 				 
 endmodule
