@@ -9,7 +9,7 @@ ts = 1/fsdown;
 VoltDown = downsample(VoltIn,fs/fsdown);
 len = length(VoltDown);
 t = 0:1/fsdown:len/fsdown;
-b = fir1(30,fc*2*pi*ts);
+b = fir1(30,fc*2*ts);
 filtered = conv(VoltIn,b);
 hold off
 plot(tin,VoltIn,'r')
