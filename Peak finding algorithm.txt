@@ -1,0 +1,10 @@
+Peak finding algorithm:
+
+1. Buffer of 100 differences: subtract next incoming value from previous value.
+2. Assign 1 if difference is negative, 0 if positive.
+3. Buffer should contain 0's and 1's at all times.
+4. If first half of buffer is predominantly 0's and second half is predominantly 1's,
+   we have found a peak.
+5. Set "peak" bit to 1 to indicate that we've found a peak.
+6. Set "peak" bit back to 0 after a certain number of cycles (to prevent detecting
+   multiple peaks close to each other).
