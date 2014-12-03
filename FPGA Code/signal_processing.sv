@@ -1,4 +1,10 @@
-// signal processing code for FPGA
+/* Kaitlin Kimberling
+ * Kristina Ming
+ * E155 Final Project
+ * Non-Invasive Heart Rate Monitor
+ */
+
+/* signal processing code for FPGA */
 module signal_processing(input logic clk, reset, sck, sdo,
 								 input logic [9:0] voltage,
 								 output logic numPeaks, numTroughs);
@@ -7,7 +13,7 @@ module signal_processing(input logic clk, reset, sck, sdo,
 	findPeaksAndTroughs fpt(clk, reset, filtered, numPeaks, numTroughs);
 endmodule
 
-// module to apply a digital FIR filter to an input signal
+/* module to apply a digital FIR filter to an input signal */
 module filter(input logic clk, reset,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filtered);
@@ -86,7 +92,7 @@ module filter(input logic clk, reset,
 		
 endmodule
 	
-// SPI slave module
+/* SPI slave module */
 module spi_slave(input logic sck, // from master 
 					  input logic sdo, // from master
 					  output logic sdi, // to master
@@ -121,12 +127,12 @@ module spi_slave(input logic sck, // from master
 	
 endmodule
 
-// module to find the peaks of a signal
+/* module to find the peaks of a signal */
 module findPeaks(input  logic clk, reset,
-				 input  logic[9:0] newSample, oldSample,
+				 input  logic[9:0] newSample,
 				 output logic foundPeak);
 				 
-	logic[9:0] newDifference;
+	logic[9:0] oldSample, newDifference;
 	logic[99:0] s; // shift register (buffer) to track slope change
 	logic[9:0] leftSum, rightSum; // sum of left and right half of buffer
 	
@@ -169,6 +175,34 @@ module findPeaks(input  logic clk, reset,
 						foundPeak <= 1'b1;
 				end
 		end	 
+endmodule
+
+/* decoder for the seven segment display
+   to display a single hexadecimal digit
+   specified by an input s */
+module sevenSeg(input  logic [3:0] s,
+                output logic [6:0] seg);
+                
+    always_comb
+        case(s)
+            4'b0000: seg = 7'b100_0000; // 0
+            4'b0001: seg = 7'b111_1001; // 1
+            4'b0010: seg = 7'b010_0100; // 2
+            4'b0011: seg = 7'b011_0000; // 3
+            4'b0100: seg = 7'b001_1001; // 4
+            4'b0101: seg = 7'b001_0010; // 5
+            4'b0110: seg = 7'b000_0010; // 6
+            4'b0111: seg = 7'b111_1000; // 7
+            4'b1000: seg = 7'b000_0000; // 8
+            4'b1001: seg = 7'b001_1000; // 9
+            4'b1010: seg = 7'b000_1000; // A
+            4'b1011: seg = 7'b000_0011; // B
+            4'b1100: seg = 7'b010_0111; // C
+            4'b1101: seg = 7'b010_0001; // D
+            4'b1110: seg = 7'b000_0110; // E
+            4'b1111: seg = 7'b000_1110; // F
+            default: seg = 7'b000_0000;
+        endcase
 endmodule
 	
 // module to find the peaks and troughs of a signal
