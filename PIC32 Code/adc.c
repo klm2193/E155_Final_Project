@@ -104,6 +104,6 @@ int main(void) {
 		}
 
 		// send data over SPI
-		received = spi_send_receive(sample);
+		received = spi_send_receive(sample-300);
 	}
 }
