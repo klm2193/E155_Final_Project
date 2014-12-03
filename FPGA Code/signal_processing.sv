@@ -33,7 +33,7 @@ module filter(input logic clk, reset, sck,
 	always_ff @(negedge sck, posedge reset) 
 		if (reset)
 			count = 0;
-		else count = cnt + 5'b1;
+		else count = count + 5'b1;
 	
 	// assign FIR filter coefficients
 	always_comb
