@@ -1,8 +1,5 @@
-/* Kaitlin Kimberling
- * Kristina Ming
- * E155 Final Project
- * Non-Invasive Heart Rate Monitor
- */
+// Kaitlin Kimberling and Kristina Ming
+// E155 Final Project: Non-Invasive Heart Rate Monitor
 
 /* signal processing code for FPGA */
 module signal_processing(input logic clk, reset, sck, sdo,
@@ -205,12 +202,19 @@ module sevenSeg(input  logic [3:0] s,
         endcase
 endmodule
 
-/* module for a 2 input multiplexer (w/ 4-bit inputs) */
-module mux24(input  logic [3:0] d0, d1,
-			 input  logic s,
+/* module for a 3 input multiplexer (w/ 4-bit inputs and
+   2 bit selector) */
+module mux24(input  logic [3:0] d0, d1, d2,
+			 input  logic s[1:0],
 			 output logic [3:0] y);
 				
-	assign y = s ? d1 : d0;
+	always_comb
+		case(s)
+			2'b00: y = d0;
+			2'b01: y = d1;
+			2'b10: y = d2;
+			default y = d0;
+		endcase
 endmodule
 
 /* module to multiplex three seven segment displays based on
@@ -270,7 +274,7 @@ module findPeaksAndTroughs(input  logic clk, reset,
 				numPeaks <= numPeaks + 1;
 				
 			else if ((pastPast > past) && (past < present))
-				numTroughs <= numTroughs +1;
+				numTroughs <= numTroughs + 1;
 			else
 				begin
 					numPeaks <= numPeaks;
