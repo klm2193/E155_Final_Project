@@ -3,17 +3,20 @@
 
 /* signal processing code for FPGA */
 module signal_processing(input logic clk, reset, sck, sdo,
-								 input logic [9:0] voltage,
-								 output logic numPeaks, numTroughs);
+						 input logic [9:0] voltage,
+						 output logic numPeaks, numTroughs);
 	filter f1(clk, reset, voltage, filtered);
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltage);
 	findPeaksAndTroughs fpt(clk, reset, filtered, numPeaks, numTroughs);
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
-module filter(input logic clk, reset,
+module filter(input logic clk, reset, sck,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filtered);
+			  
+	logic [4:0] count; // count to 32 (it takes 32 cycles to have all
+					   // of the SPI data
 			  
 	// filter coefficients
 	logic [31:0] a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10;
@@ -25,6 +28,12 @@ module filter(input logic clk, reset,
 	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
 	
 	logic [9:0] filteredSignal;
+	
+	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	always_ff @(negedge sck, posedge reset) 
+		if (reset)
+			count = 0;
+		else count = cnt + 5'b1;
 	
 	// assign FIR filter coefficients
 	always_comb
@@ -48,55 +57,56 @@ module filter(input logic clk, reset,
 		end
 	
 	// shift register to delay the voltage signal
-	always_ff @(posedge clk)
-		begin
-			v0 <= v1;
-			v1 <= v2;
-			v2 <= v3;
-			v3 <= v4;
-			v4 <= v5;
-			v5 <= v6;
-			v6 <= v7;
-			v7 <= v8;
-			v8 <= v9;
-			v9 <= v10;
-			v10 <= v11;
-			v11 <= v12;
-			v12 <= v13;
-			v13 <= v14;
-			v14 <= v15;
-			v15 <= v16;
-			v16 <= v17;
-			v17 <= v18;
-			v18 <= v19;
-			v19 <= v20;
-			v20 <= v21;
-			v21 <= v22;
-			v22 <= v23;
-			v23 <= v24;
-			v24 <= v25;
-			v25 <= v26;
-			v26 <= v27;
-			v27 <= v28;
-			v28 <= v29;
-			v29 <= v30;
-			
-			// calculate the filtered signal
-			filteredSignal <= a0*(v0+v30) + a1*(v1+v29) + a2*(v2+v28) + a3*(v3+v27) + a4*(v4+v26) + a5*(v5+v25) +
-							  a6*(v6+v24) + a7*(v7+v23) + a8*(v8+v22) + a9*(v9+v21) + a10*(v10+v20) + a11*(v11+v19) +
-							  a12*(v12+v18) + a13*(v13+v17) + a14*(v14+v16) + a15*v15;
-		end
-		
+	always_ff @(posedge sck)
+		if (count == 0)
+			begin
+				v0 <= v1;
+				v1 <= v2;
+				v2 <= v3;
+				v3 <= v4;
+				v4 <= v5;
+				v5 <= v6;
+				v6 <= v7;
+				v7 <= v8;
+				v8 <= v9;
+				v9 <= v10;
+				v10 <= v11;
+				v11 <= v12;
+				v12 <= v13;
+				v13 <= v14;
+				v14 <= v15;
+				v15 <= v16;
+				v16 <= v17;
+				v17 <= v18;
+				v18 <= v19;
+				v19 <= v20;
+				v20 <= v21;
+				v21 <= v22;
+				v22 <= v23;
+				v23 <= v24;
+				v24 <= v25;
+				v25 <= v26;
+				v26 <= v27;
+				v27 <= v28;
+				v28 <= v29;
+				v29 <= v30;
+				
+				// calculate the filtered signal
+				filteredSignal <= a0*(v0+v30) + a1*(v1+v29) + a2*(v2+v28) + a3*(v3+v27) + 
+								  a4*(v4+v26) + a5*(v5+v25) + a6*(v6+v24) + a7*(v7+v23) + 
+								  a8*(v8+v22) + a9*(v9+v21) + a10*(v10+v20) + a11*(v11+v19) +
+								  a12*(v12+v18) + a13*(v13+v17) + a14*(v14+v16) + a15*v15;
+			end
 endmodule
 	
 /* SPI slave module */
 module spi_slave(input logic sck, // from master 
-					  input logic sdo, // from master
-					  output logic sdi, // to master
-					  input logic reset,
-					  input logic [31:0] d, // data to send 
-					  output logic [31:0] q, // data received
-					  output logic [9:0] voltage); // discrete output signal
+				 input logic sdo, // from master
+				 output logic sdi, // to master
+				 input logic reset,
+				 input logic [31:0] d, // data to send 
+				 output logic [31:0] q, // data received
+				 output logic [9:0] voltage); // discrete output signal
 
 	logic [4:0] cnt; 
 	logic qdelayed;
@@ -129,49 +139,47 @@ module findPeaks(input  logic clk, reset,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak);
 				 
-	logic[9:0] oldSample, newDifference;
-	logic[99:0] s; // shift register (buffer) to track slope change
-	logic[9:0] leftSum, rightSum; // sum of left and right half of buffer
+	logic [9:0] oldSample, newDifference;
+	logic [99:0] s; // shift register (buffer) to track slope change
+	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
 	
 	// keep track of if the slope is increasing or decreasing
 	always_ff @(posedge clk, posedge reset)
-		begin
-			if (reset)
-				begin
-					leftSum <= '0;
-					rightSum <= '0;
-					s <= {100'b0};
-				end
+		if (reset)
+			begin
+				leftSum <= '0;
+				rightSum <= '0;
+				s <= {100'b0};
+			end
 				
-			else
-				begin
-					oldSample <= newSample;
+		else
+			begin
+				oldSample <= newSample;
+				
+				// if the new value is greater than the old value, the
+				// slope is increasing
+				if ((newSample - oldSample) > 0)
+					newDifference <= 0;
+				
+				// if the new value is less than the old value, the slope
+				// is decreasing
+				else
+					newDifference <= 1;
 					
-					// if the new value is greater than the old value, the
-					// slope is increasing
-					if ((newSample - oldSample) > 0)
-						newDifference <= 0;
-					
-					// if the new value is less than the old value, the slope
-					// is decreasing
-					else
-						newDifference <= 1;
-						
-					// shift in the new indicator bit
-					s <= {s[98:0], newDifference};
-					
-					// keep track of the sum of the left and right sides of
-					// the shift register
-					rightSum <= rightSum + newSample - s[49];
-					leftSum <= leftSum + s[49] - s[99];
-					
-					// if 4/5 of the left half are positive slopes
-					// and 4/5 of the right half are negative slopes,
-					// we have a peak
-					if ((leftSum <= 10)&& (rightSum >= 40) && !foundPeak)
-						foundPeak <= 1'b1;
-				end
-		end	 
+				// shift in the new indicator bit
+				s <= {s[98:0], newDifference};
+				
+				// keep track of the sum of the left and right sides of
+				// the shift register
+				rightSum <= rightSum + newSample - s[49];
+				leftSum <= leftSum + s[49] - s[99];
+				
+				// if 4/5 of the left half are positive slopes
+				// and 4/5 of the right half are negative slopes,
+				// we have a peak
+				if ((leftSum <= 10)&& (rightSum >= 40) && !foundPeak)
+					foundPeak <= 1'b1;
+			end
 endmodule
 
 /* decoder for the seven segment display
@@ -257,7 +265,7 @@ module findPeaksAndTroughs(input  logic clk, reset,
 						   input  logic[9:0] inputSignal,
 						   output logic [9:0] numPeaks, numTroughs);
 						   
-	logic[9:0] pastPast, past, present;
+	logic [9:0] pastPast, past, present;
 	
 	always_ff @(posedge clk, posedge reset)
 		begin
