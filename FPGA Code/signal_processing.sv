@@ -2,12 +2,13 @@
 // E155 Final Project: Non-Invasive Heart Rate Monitor
 
 /* signal processing code for FPGA */
-module signal_processing(input logic clk, reset, sck, sdo,
-						 input logic [9:0] voltage,
-						 output logic numPeaks, numTroughs);
-	filter f1(clk, reset, voltage, filtered);
+module signal_processing(input logic clk, reset, 
+								 input  logic sck, sdo, sdi,
+								 input logic [9:0] voltage,
+								 output logic [9:0] fpgaReading);//numPeaks, numTroughs);
+	//filter f1(clk, reset, voltage, filtered);
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltage);
-	findPeaksAndTroughs fpt(clk, reset, filtered, numPeaks, numTroughs);
+	assign fpgaReading = voltage;
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
