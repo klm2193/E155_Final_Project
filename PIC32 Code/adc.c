@@ -1,3 +1,6 @@
+// Kaitlin Kimberling and Kristina Ming
+// E155 Final Project: Non-Invasive Heart Rate Monitor
+
 #include <P32xxxx.h>
 #include <plib.h>
 
@@ -9,7 +12,7 @@ void initadc(int channel);
 int readadc(void) ;
 
 // We want to sample at 200 Hz.
-// Divide clock by 4 and have prescalar of 8.
+// Divide clock by 4 (10 MHz clk) and have prescalar of 8.
 
 // initialize timers
 void initTimers(void) {
@@ -37,7 +40,7 @@ void initspi(void) {
 
 	SPI2CONbits.ON = 0; // disable SPI to reset any previous state
 	junk = SPI2BUF; // read SPI buffer to clear the receive buffer
-	SPI2BRG = 7; //set BAUD rate to 1.25MHz, with Pclk at 20MHz 
+	SPI2BRG = 3; //set BAUD rate to 1.25MHz, with Pclk at 10MHz 
 	SPI2CONbits.MSTEN = 1; // enable master mode
 	SPI2CONbits.CKE = 1; // set clock-to-data timing (data centered on rising SCK edge) 
 	SPI2CONbits.ON = 1; // turn SPI on
