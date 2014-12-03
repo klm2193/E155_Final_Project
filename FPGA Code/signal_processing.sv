@@ -4,11 +4,10 @@
 /* signal processing code for FPGA */
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
-								 input logic [9:0] voltage,
+								 //input logic [9:0] voltage,
 								 output logic [9:0] fpgaReading);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
-	spi_slave ss(sck, sdo, sdi, reset, d, q, voltage);
-	assign fpgaReading = voltage;
+	spi_slave ss(sck, sdo, sdi, reset, d, q, fpgaReading);//voltage);
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
