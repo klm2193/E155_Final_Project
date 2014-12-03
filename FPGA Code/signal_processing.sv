@@ -131,30 +131,38 @@ module findPeaks(input  logic clk, reset,
 	logic[9:0] leftSum, rightSum;
 	
 	// keep track of if the slope is increasing or decreasing
-	always_ff @(posedge clk)
+	always_ff @(posedge clk, reset)
 		begin
-			oldSample <= newSample;
-			
-			// if the new value is greater than the old value, the
-			// slope is increasing
-			if ((newSample - oldSample) > 0)
-				newDifference <= 0;
-			
-			// if the new value is less than the old value, the slope
-			// is decreasing
-			else
-				newDifference <= 1;
+			if (reset)
+				begin
+					leftSum <= '0;
+					rightSum <= '0;
+					s <= {100'b0};
+				end
 				
-			// shift in the new indicator bit
-			s <= {s[98:0], newDifference};
-			
-			// keep track of the sum of the left and right sides of
-			// the shift register
-			rightSum <= rightSum + newSample - s[49];
-			leftSum <= leftSum + s[49] - s[99];
-			
-		end
-				 
+			else
+				begin
+					oldSample <= newSample;
+					
+					// if the new value is greater than the old value, the
+					// slope is increasing
+					if ((newSample - oldSample) > 0)
+						newDifference <= 0;
+					
+					// if the new value is less than the old value, the slope
+					// is decreasing
+					else
+						newDifference <= 1;
+						
+					// shift in the new indicator bit
+					s <= {s[98:0], newDifference};
+					
+					// keep track of the sum of the left and right sides of
+					// the shift register
+					rightSum <= rightSum + newSample - s[49];
+					leftSum <= leftSum + s[49] - s[99];
+				end
+		end	 
 endmodule
 	
 // module to find the peaks and troughs of a signal
