@@ -204,6 +204,49 @@ module sevenSeg(input  logic [3:0] s,
             default: seg = 7'b000_0000;
         endcase
 endmodule
+
+/* module for a 2 input multiplexer (w/ 4-bit inputs) */
+module mux24(input  logic [3:0] d0, d1,
+			 input  logic s,
+			 output logic [3:0] y);
+				
+	assign y = s ? d1 : d0;
+endmodule
+
+/* module to multiplex three seven segment displays based on
+   a counter */
+module multiplexDisplay(input  logic clk, reset,
+						output logic multiplex, disp1, disp2);
+
+	logic [27:0] counter = '0;
+	logic [27:0] thresh = 28'd250000;
+	
+	// the human eye can only see ~40 fps, so we toggle our display
+	// at a rate above that
+	always_ff @(posedge clk, posedge reset)
+		if (reset)
+			begin
+				counter <= '0;
+				multiplex <= '0;
+			end
+			
+		else if (counter >= thresh)
+			begin
+				counter <='0;
+				multiplex <= ~multiplex;
+			end
+			
+		else
+			begin
+				multiplex <= multiplex;
+				counter <= counter + 1'b1;
+			end
+		
+	// choose which 7-segment display to use
+	assign disp1 = multiplex;
+	assign disp2 = ~multiplex;
+
+endmodule
 	
 // module to find the peaks and troughs of a signal
 module findPeaksAndTroughs(input  logic clk, reset,
