@@ -134,7 +134,7 @@ module findPeaks(input  logic clk, reset,
 	logic[9:0] leftSum, rightSum; // sum of left and right half of buffer
 	
 	// keep track of if the slope is increasing or decreasing
-	always_ff @(posedge clk, reset)
+	always_ff @(posedge clk, posedge reset)
 		begin
 			if (reset)
 				begin
