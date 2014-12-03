@@ -124,11 +124,11 @@ endmodule
 // module to find the peaks of a signal
 module findPeaks(input  logic clk, reset,
 				 input  logic[9:0] newSample, oldSample,
-				 output logic numPeaks);
+				 output logic foundPeak);
 				 
 	logic[9:0] newDifference;
 	logic[99:0] s; // shift register (buffer) to track slope change
-	logic[9:0] leftSum, rightSum;
+	logic[9:0] leftSum, rightSum; // sum of left and right half of buffer
 	
 	// keep track of if the slope is increasing or decreasing
 	always_ff @(posedge clk, reset)
@@ -161,6 +161,12 @@ module findPeaks(input  logic clk, reset,
 					// the shift register
 					rightSum <= rightSum + newSample - s[49];
 					leftSum <= leftSum + s[49] - s[99];
+					
+					// if 4/5 of the left half are positive slopes
+					// and 4/5 of the right half are negative slopes,
+					// we have a peak
+					if ((leftSum <= 10)&& (rightSum >= 40) && !foundPeak)
+						foundPeak <= 1'b1;
 				end
 		end	 
 endmodule
