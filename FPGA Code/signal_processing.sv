@@ -121,17 +121,22 @@ module findPeaks(input  logic clk, reset,
 				 output logic numPeaks);
 				 
 	logic[9:0] newDifference;
+	logic[99:0] s; // shift register to track slope change
+	logic[9:0] leftSum, rightSum;
 	
-	logic[99:0] s;
-	
+	// keep track of if the slope is increasing or decreasing
 	always_ff @(posedge clk)
 		begin
 			oldSample <= newSample;
 			
-			// keep track of if the slope is increasing or decreasing
-			if ((newSample - oldSample) > 0) // slope is increasing
+			// if the new value is greater than the old value, the
+			// slope is increasing
+			if ((newSample - oldSample) > 0)
 				newDifference <= 0;
-			else // slope is decreasing
+			
+			// if the new value is less than the old value, the slope
+			// is decreasing
+			else
 				newDifference <= 1;
 				
 			// shift in the new indicator bit
