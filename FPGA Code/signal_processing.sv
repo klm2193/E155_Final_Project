@@ -34,10 +34,12 @@ module filter(input logic clk, reset, sck,
 	//logic [9:0] filteredSignal;
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
-	always_ff @(negedge sck, posedge reset) 
+	always_ff @(negedge sck, posedge reset)
+		begin
 		if (reset)
 			count = 0;
 		else count = count + 5'b1;
+		end
 	
 	// assign FIR filter coefficients
 	always_comb
@@ -110,7 +112,7 @@ module spi_slave(input logic sck, // from master
 				 input logic reset,
 				 input logic [31:0] d, // data to send 
 				 output logic [31:0] q, // data received
-				 output logic [9:0] voltage); // discrete output signal
+				 output logic [31:0] voltage); // discrete output signal
 
 	logic [4:0] cnt; 
 	logic qdelayed;
@@ -126,7 +128,7 @@ module spi_slave(input logic sck, // from master
 	always_ff @(posedge sck)
 		begin
 			q <= (cnt == 0) ? d : {q[30:0], sdo};
-			voltage <= (cnt == 0) ? q[9:0] : voltage;
+			voltage <= (cnt == 0) ? q[30:0] : voltage;
 		end
 
 	// align sdi to falling edge of sck
