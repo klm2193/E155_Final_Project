@@ -10,7 +10,7 @@ module signal_processing(input logic clk, reset,
 	logic [7:0] filtered;
 	logic [31:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
-	filter f1(clk, reset, sck, {2'b0, voltageOutput}, filtered);
+	filter f1(clk, reset, sck, {1'b0, voltageOutput[7:0]}, filtered);
 	assign fpgaReading[7:0] = filtered;//voltageOutput[7:0];
 endmodule
 
