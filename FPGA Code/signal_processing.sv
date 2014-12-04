@@ -5,15 +5,19 @@
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
 								 //input logic [9:0] voltage,
-								 output logic [9:0] fpgaReading);//numPeaks, numTroughs);
+								 output logic [7:0] fpgaReading);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
-	spi_slave ss(sck, sdo, sdi, reset, d, q, fpgaReading);//voltage);
+	logic [7:0] filtered;
+	logic [31:0] voltageOutput;
+	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
+	filter f1(clk, reset, sck, {2'b0, voltageOutput}, filtered);
+	assign fpgaReading[7:0] = filtered;//voltageOutput[7:0];
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
 module filter(input logic clk, reset, sck,
 			  input logic [9:0] voltage,
-			  output logic [9:0] filtered);
+			  output logic [9:0] filteredSignal);
 			  
 	logic [4:0] count; // count to 32 (it takes 32 cycles to have all
 					   // of the SPI data
@@ -27,7 +31,7 @@ module filter(input logic clk, reset, sck,
 	logic [9:0] v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
 	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
 	
-	logic [9:0] filteredSignal;
+	//logic [9:0] filteredSignal;
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset) 
