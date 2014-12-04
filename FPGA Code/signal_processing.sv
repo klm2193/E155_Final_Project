@@ -31,7 +31,7 @@ module filter(input logic clk, reset, sck,
 	logic [9:0] v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
 	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
 	
-	//logic [9:0] filteredSignal;
+	logic [31:0] intermediateFiltered;
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset)
@@ -116,11 +116,11 @@ module filter(input logic clk, reset, sck,
 				v30 <= voltage;
 				
 				// calculate the filtered signal
-				filteredSignal <= a0*(v0+v30) + a1*(v1+v29) + a2*(v2+v28) + a3*(v3+v27) + 
+				intermediateFiltered <= a0*(v0+v30) + a1*(v1+v29) + a2*(v2+v28) + a3*(v3+v27) + 
 								  a4*(v4+v26) + a5*(v5+v25) + a6*(v6+v24) + a7*(v7+v23) + 
 								  a8*(v8+v22) + a9*(v9+v21) + a10*(v10+v20) + a11*(v11+v19) +
 								  a12*(v12+v18) + a13*(v13+v17) + a14*(v14+v16) + a15*v15;
-				filteredSignal <= filteredSignal >> 10;				  
+				filteredSignal <= intermediateFiltered >> 10;				  
 			end
 endmodule
 	
