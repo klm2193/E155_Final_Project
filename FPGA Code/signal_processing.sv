@@ -42,6 +42,7 @@ module filter(input logic clk, reset, sck,
 	// assign FIR filter coefficients
 	always_comb
 		begin
+	/*
 			a0 = 0.0032;
 			a1 = 0.0039;
 			a2 = 0.0055;
@@ -57,7 +58,23 @@ module filter(input logic clk, reset, sck,
 			a12 = 0.0592;
 			a13 = 0.0630;
 			a14 = 0.0653;
-			a15 = 0.0661;
+			a15 = 0.0661; */
+			a0 = 1;
+			a1 = 1;
+			a2 = 1;
+			a3 = 1;
+			a4 = 1;
+			a5 = 1;
+			a6 = 1;
+			a7 = 1;
+			a8 = 1;
+			a9 = 1;
+			a10 = 1;
+			a11 = 1;
+			a12 = 1;
+			a13 = 1;
+			a14 = 1;
+			a15 = 1;
 		end
 	
 	// shift register to delay the voltage signal
@@ -94,6 +111,7 @@ module filter(input logic clk, reset, sck,
 				v27 <= v28;
 				v28 <= v29;
 				v29 <= v30;
+				v30 <= voltage;
 				
 				// calculate the filtered signal
 				filteredSignal <= a0*(v0+v30) + a1*(v1+v29) + a2*(v2+v28) + a3*(v3+v27) + 
