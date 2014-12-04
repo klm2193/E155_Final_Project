@@ -42,8 +42,8 @@ module filter(input logic clk, reset, sck,
 	// assign FIR filter coefficients
 	always_comb
 		begin
-	/*
-			a0 = 0.0032;
+	
+			/*a0 = 0.0032;
 			a1 = 0.0039;
 			a2 = 0.0055;
 			a3 = 0.0081;
@@ -58,23 +58,25 @@ module filter(input logic clk, reset, sck,
 			a12 = 0.0592;
 			a13 = 0.0630;
 			a14 = 0.0653;
-			a15 = 0.0661; */
-			a0 = 1;
-			a1 = 1;
-			a2 = 1;
-			a3 = 1;
-			a4 = 1;
-			a5 = 1;
-			a6 = 1;
-			a7 = 1;
-			a8 = 1;
-			a9 = 1;
-			a10 = 1;
-			a11 = 1;
-			a12 = 1;
-			a13 = 1;
-			a14 = 1;
-			a15 = 1;
+			a15 = 0.0661;*/
+			
+			// Multiplying by 1024 = 2^10
+			a0 = 3;
+			a1 = 4;
+			a2 = 6;
+			a3 = 8;
+			a4 = 12;
+			a5 = 17;
+			a6 = 23;
+			a7 = 29;
+			a8 = 36;
+			a9 = 43;
+			a10 = 50;
+			a11 = 56;
+			a12 = 61;
+			a13 = 65;
+			a14 = 67;
+			a15 = 68;
 		end
 	
 	// shift register to delay the voltage signal
@@ -118,6 +120,7 @@ module filter(input logic clk, reset, sck,
 								  a4*(v4+v26) + a5*(v5+v25) + a6*(v6+v24) + a7*(v7+v23) + 
 								  a8*(v8+v22) + a9*(v9+v21) + a10*(v10+v20) + a11*(v11+v19) +
 								  a12*(v12+v18) + a13*(v13+v17) + a14*(v14+v16) + a15*v15;
+				filteredSignal <= filteredSignal >> 10;				  
 			end
 endmodule
 	
