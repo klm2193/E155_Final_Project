@@ -253,7 +253,7 @@ endmodule
 /* module to multiplex three seven segment displays based on
    a counter */
 module multiplexDisplay(input  logic clk, reset,
-						output logic multiplex, disp1, disp2);
+						output logic multiplex, disp1, disp2, disp3);
 
 	logic [27:0] counter = '0;
 	logic [27:0] thresh = 28'd250000;
@@ -264,24 +264,39 @@ module multiplexDisplay(input  logic clk, reset,
 		if (reset)
 			begin
 				counter <= '0;
-				multiplex <= '0;
+				state1 <= '0;
+				state2 <= '0;
+				state3 <= '0;
 			end
 			
-		else if (counter >= thresh)
+		else if (counter <= thresh)
 			begin
-				counter <='0;
-				multiplex <= ~multiplex;
+				state1 <= '1;
+				state2 <= '0;
+				state3 <= '0;
+				counter <= counter + 1'b1;
+			end
+			
+		else if (counter > thresh && counter <= 2*thresh)
+			begin
+				state1 <= '0;
+				state2 <= '1;
+				state3 <= '0;
+				counter <= counter + 1'b1;
 			end
 			
 		else
 			begin
-				multiplex <= multiplex;
-				counter <= counter + 1'b1;
+				state1 <= '0;
+				state2 <= '0;
+				state3 <= '1;
+				counter <= '0;
 			end
 		
 	// choose which 7-segment display to use
-	assign disp1 = multiplex;
-	assign disp2 = ~multiplex;
+	assign disp1 = state1;
+	assign disp2 = state2;
+	assign disp3 = state3;
 
 endmodule
 	
