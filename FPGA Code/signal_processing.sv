@@ -8,10 +8,12 @@ module signal_processing(input logic clk, reset,
 								 output logic [7:0] fpgaReading,
 								 output logic peakLED);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
+	logic foundPeak;
 	logic [9:0] filtered;
 	logic [31:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
+	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peakLED);
 	assign fpgaReading[7:0] = filtered[7:0];//voltageOutput[7:0];
 endmodule
 
@@ -164,7 +166,7 @@ endmodule
 module DAC(input logic clk, reset,
 		   input logic [9:0] filteredSignal,
 		   output logic DACserial,
-		   output logic load, LDAC DACclk);
+		   output logic load, LDAC, DACclk);
 		  
 	always_comb
 		begin
@@ -183,18 +185,26 @@ endmodule
 /* module to find the peaks of a signal */
 /* We need to add a counter or something to tell it when to turn the
    foundPeak bit off. */
-module findPeaks(input  logic clk, reset,
+module findPeaks(input  logic clk, reset, sck,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak,
 				 output logic peak);
 				 
+	logic [4:0] sckcount;
 	logic [9:0] oldSample, newDifference;
 	logic [127:0] s; // shift register (buffer) to track slope change
 	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
 	logic [6:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
 	
+	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	always_ff @(negedge sck, posedge reset)
+		if (reset)
+			sckcount <= 0;
+		else sckcount <= sckcount + 5'b1;
+	
 	// keep track of if the slope is increasing or decreasing
-	always_ff @(posedge clk, posedge reset)
+	always_ff @(posedge sck, posedge reset)
+		//if (count == 0) begin
 		if (reset)
 			begin
 				count <= '0;
@@ -232,7 +242,7 @@ module findPeaks(input  logic clk, reset,
 				
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
-				// we have a peak 
+				// we have a peak  Erg, this is super sketchy!!
 				if ((leftSum <= 10)&& (rightSum >= 40) && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
@@ -250,6 +260,7 @@ module findPeaks(input  logic clk, reset,
 				else
 					foundPeak <= 1'b0;
 			end
+			//end
 endmodule
 
 /* decoder for the seven segment display
@@ -302,6 +313,7 @@ module multiplexDisplay(input  logic clk, reset,
 
 	logic [27:0] counter = '0;
 	logic [27:0] thresh = 28'd250000;
+	logic state1, state2, state3;
 	
 	// the human eye can only see ~40 fps, so we toggle our display
 	// at a rate above that
@@ -365,10 +377,10 @@ module countPeaks(input logic clk, reset, foundPeak,
 			else if (count < thresh)
 				begin
 					count <= count + 1'b1;
-					always_ff @(posedge foundPeak)
+					/*always_ff @(posedge foundPeak)
 						begin
 							numPeaks <= numPeaks + 1'b1;
-						end
+						end*/
 				end
 				
 			else
@@ -377,6 +389,7 @@ module countPeaks(input logic clk, reset, foundPeak,
 					numPeaks <= '0;
 					count <= '0;
 				end
+		end
 endmodule
 				
 /* module to get decimal digits from 3-digit decimal number */
@@ -407,6 +420,7 @@ module getDigits(input logic [7:0] heartRate,
 			// Hundreds digit
 			assign digit3 = heartRate[7] + overflow100;
 		end
+endmodule
 			
 	
 // module to find the peaks and troughs of a signal
@@ -438,5 +452,4 @@ module findPeaksAndTroughs(input  logic clk, reset,
 					numTroughs <= numTroughs;
 				end
 		end
-
 endmodule
