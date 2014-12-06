@@ -160,6 +160,8 @@ module spi_slave(input logic sck, // from master
 endmodule
 
 /* module to find the peaks of a signal */
+/* We need to add a counter or something to tell it when to turn the
+   foundPeak bit off. */
 module findPeaks(input  logic clk, reset,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak);
@@ -167,16 +169,23 @@ module findPeaks(input  logic clk, reset,
 	logic [9:0] oldSample, newDifference;
 	logic [99:0] s; // shift register (buffer) to track slope change
 	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
+	logic [23:0] count; // 24 bit counter to keep track of how long findPeak should stay high.
 	
 	// keep track of if the slope is increasing or decreasing
 	always_ff @(posedge clk, posedge reset)
 		if (reset)
 			begin
+				count <= '0;
 				leftSum <= '0;
 				rightSum <= '0;
 				s <= {100'b0};
 			end
 				
+		else if(count == 24'd13000000)
+			begin
+				foundPeak <= 1'b0;
+				count <= '0;
+			end
 		else
 			begin
 				oldSample <= newSample;
@@ -201,9 +210,16 @@ module findPeaks(input  logic clk, reset,
 				
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
-				// we have a peak
+				// we have a peak  Erg, this is super sketchy!!
 				if ((leftSum <= 10)&& (rightSum >= 40) && !foundPeak)
-					foundPeak <= 1'b1;
+					begin
+						foundPeak <= 1'b1;
+						count <= '0;
+					end
+					
+				// increment the counter if peak has been foundPeak
+				if(foundPeak)
+					count <= count + '1;
 			end
 endmodule
 
@@ -253,7 +269,7 @@ endmodule
 /* module to multiplex three seven segment displays based on
    a counter */
 module multiplexDisplay(input  logic clk, reset,
-						output logic multiplex, disp1, disp2, disp3);
+						output logic disp1, disp2, disp3);
 
 	logic [27:0] counter = '0;
 	logic [27:0] thresh = 28'd250000;
