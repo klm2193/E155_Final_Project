@@ -5,7 +5,6 @@
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
 								 //input logic [9:0] voltage,
-								 output logic [7:0] fpgaReading,
 								 output logic peakLED);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic foundPeak;
@@ -14,7 +13,6 @@ module signal_processing(input logic clk, reset,
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peakLED);
-	assign fpgaReading[7:0] = filtered[7:0];//voltageOutput[7:0];
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
