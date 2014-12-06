@@ -375,23 +375,28 @@ module getDigits(input logic [7:0] heartRate,
 				 output logic [3:0] digit1, digit2, digit3);
 				 // digit1 is LSB
 				 
-				 logic [5:0] sum1;
-				 logic [4:0] overflow30, overflow20, overflow10;
+				 logic [5:0] sum1, sum2;
+				 logic [4:0] overflow100, overflow30, overflow20, overflow10;
 				 
 	always_comb
 		begin
+			// Add ones digits and account for overflow
 			assign sum1 = 1'd1*heartRate[0] + 2'd2*heartRate[1] + 3'd4*heartRate[2] + 3'd8*heartRate[3]
 			+ 3'd6*heartRate[4] + 2'd2*heartRate[5] + 3'd4*heartRate[6] + 3'd8*heartRate[7];
 			assign overflow30 = sum1 > 5'd29;
-			assign overflow20 = sum1 > 5'd20 & sum1 < 5'd30;
-			assign overflow10 = sum1 > 4'd10 & sum1 < 5'd20;
+			assign overflow20 = sum1 > 5'd19 & sum1 < 5'd30;
+			assign overflow10 = sum1 > 4'd9 & sum1 < 5'd20;
 			assign digit1 = overflow30*(sum1 - 5'd30) + overflow20*(sum1 - 5'd20) + overflow10*(sum1 - 4'd10)
 			+ ~(overflow10 + overflow20 + overflow30)*sum1;
 			
+			// Add tens digits and account for overflow
 			assign sum2= 1'd1*heartRate[4] + 2'd3*heartRate[5] + 3'd6*heartRate[6] + 2'd2*heartRate[6]
 			+ overflow10 + 2'd2*overflow20 + 2'd3*overflow30;
+			assign overflow100 = sum2 > 7'd99;
+			assign digit2 = overflow100*(sum2 - 7'd100) + !overflow100*sum2;
 			
-			assign
+			// Hundreds digit
+			assign digit3 = heartRate[7] + overflow100;
 		end
 			
 	
