@@ -210,6 +210,8 @@ module findPeaks(input  logic clk, reset, sck,
 				count <= '0;
 				leftSum <= '0;
 				rightSum <= '0;
+				peak <= '0;
+				foundPeak <= '0;
 				s <= {50'h3FFFFFFFFFFFF, 50'h000000000000};
 			end
 		/*		
@@ -238,13 +240,13 @@ module findPeaks(input  logic clk, reset, sck,
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
-				rightSum <= rightSum + newSample - s[63];
+				rightSum <= rightSum + newDifference - s[63];
 				leftSum <= leftSum + s[64] - s[127];
 				
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
 				// we have a peak  Erg, this is super sketchy!!
-				if ((leftSum <= 20)&& (rightSum >= 40) && !foundPeak)
+				if ((leftSum <= 20)&& (rightSum >= 40))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= '0;
@@ -252,7 +254,7 @@ module findPeaks(input  logic clk, reset, sck,
 					end
 					
 				// increment the counter if peak has been foundPeak
-				if(foundPeak && count != 0)
+				if(foundPeak)// && count != 0)
 					count <= count + '1;
 					
 				else if(count == 20)
