@@ -204,7 +204,7 @@ module findPeaks(input  logic clk, reset, sck,
 	
 	// keep track of if the slope is increasing or decreasing
 	always_ff @(posedge sck, posedge reset)
-		//if (count == 0) begin
+		
 		if (reset)
 			begin
 				count <= '0;
@@ -212,13 +212,14 @@ module findPeaks(input  logic clk, reset, sck,
 				rightSum <= '0;
 				s <= {50'h3FFFFFFFFFFFF, 50'h000000000000};
 			end
-				
+		/*		
 		else if(count == 24'd13000000)
 			begin
 				foundPeak <= 1'b0;
 				count <= '0;
 			end
-		else
+		else*/
+		else if (sckcount == 0)
 			begin
 				oldSample <= newSample;
 				
