@@ -14,6 +14,7 @@ module signal_processing(input logic clk, reset,
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peak);
+	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	assign peakLED = foundPeak;
 endmodule
 
@@ -183,7 +184,8 @@ module DAC(input logic sck, reset,
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset)
 		if (reset)
-			count <= 0;
+			count <= 1'b0;
+			load <= 1'b1;
 		else count <= count + 5'b1;
 		
 	always_ff @(posedge sck)
@@ -191,6 +193,7 @@ module DAC(input logic sck, reset,
 			begin
 				newSignal <= filteredSignal;
 				buffer <= {A,RNG,newSignal};
+				load <= 1'b1;
 			end
 		else if (count > 0 && count < 4'd12)
 			begin
@@ -198,6 +201,7 @@ module DAC(input logic sck, reset,
 				buffer[10:0] <= {buffer[9:0], 1'b0};
 			end
 		else if (count == 4'd12)
+			load <= 1'b0;
 	
 endmodule
 		   
