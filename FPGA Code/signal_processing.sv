@@ -184,15 +184,17 @@ module DAC(input logic sck, reset,
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset)
 		if (reset)
-			count <= 1'b0;
-			load <= 1'b1;
+			begin
+				count <= 1'b0;
+				//load <= 1'b1;
+			end
 		else count <= count + 5'b1;
 		
 	always_ff @(posedge sck)
 		if(count == 0)
 			begin
-				newSignal <= filteredSignal;
-				buffer <= {A,RNG,newSignal[7:0]};
+				//newSignal <= filteredSignal;
+				buffer <= {A,RNG,filteredSignal[7:0]};
 				load <= 1'b1;
 			end
 		else if (count > 0 && count < 4'd12)
@@ -202,6 +204,9 @@ module DAC(input logic sck, reset,
 			end
 		else if (count == 4'd12)
 			load <= 1'b0;
+			
+		else if (count == 4'd13)
+			load <=1'b1;
 	
 endmodule
 		   
