@@ -167,10 +167,14 @@ module DAC(input logic clk, reset,
 		   input logic [9:0] filteredSignal,
 		   output logic DACserial,
 		   output logic load, LDAC, DACclk);
+		   
+	logic [1:0] A = 2'b00;
+	logic RNG = 1'b0;
+	logic [7:0] buffer 
 		  
 	always_comb
 		begin
-			LDAC = '0;
+			LDAC = 1'b'0;
 			DACclk = clk;
 		end
 	
