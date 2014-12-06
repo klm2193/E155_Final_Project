@@ -5,12 +5,13 @@
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
 								 //input logic [9:0] voltage,
-								 output logic [7:0] fpgaReading);//numPeaks, numTroughs);
+								 output logic [7:0] fpgaReading,
+								 output logic peakLED);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic [9:0] filtered;
 	logic [31:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
-	filter f1(reset, sck, {2'b0, voltageOutput[7:0]}, filtered);
+	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	assign fpgaReading[7:0] = filtered[7:0];//voltageOutput[7:0];
 endmodule
 
@@ -184,12 +185,13 @@ endmodule
    foundPeak bit off. */
 module findPeaks(input  logic clk, reset,
 				 input  logic[9:0] newSample,
-				 output logic foundPeak);
+				 output logic foundPeak,
+				 output logic peak);
 				 
 	logic [9:0] oldSample, newDifference;
-	logic [99:0] s; // shift register (buffer) to track slope change
+	logic [127:0] s; // shift register (buffer) to track slope change
 	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
-	logic [23:0] count; // 24 bit counter to keep track of how long findPeak should stay high.
+	logic [6:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
 	
 	// keep track of if the slope is increasing or decreasing
 	always_ff @(posedge clk, posedge reset)
@@ -198,7 +200,7 @@ module findPeaks(input  logic clk, reset,
 				count <= '0;
 				leftSum <= '0;
 				rightSum <= '0;
-				s <= {100'b0};
+				s <= {50'h3FFFFFFFFFFFF, 50'h000000000000};
 			end
 				
 		else if(count == 24'd13000000)
@@ -221,7 +223,7 @@ module findPeaks(input  logic clk, reset,
 					newDifference <= 1;
 					
 				// shift in the new indicator bit
-				s <= {s[98:0], newDifference};
+				s <= {s[126:0], newDifference};
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
@@ -235,11 +237,18 @@ module findPeaks(input  logic clk, reset,
 					begin
 						foundPeak <= 1'b1;
 						count <= '0;
+						peak <= 1'b1;
 					end
 					
 				// increment the counter if peak has been foundPeak
-				if(foundPeak)
+				if(foundPeak && count != 0)
 					count <= count + '1;
+					
+				else if(count == 20)
+					peak <= 1'b0;
+					
+				else
+					foundPeak <= 1'b0;
 			end
 endmodule
 
