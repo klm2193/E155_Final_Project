@@ -315,10 +315,44 @@ module multiplexDisplay(input  logic clk, reset,
 	assign disp3 = state3;
 
 endmodule
+
+/* module to count the number of peaks over a certain time period 
+   and output the heart rate */
+module countPeaks(input logic clk, reset, foundPeak,
+				  output logic [7:0] heartRate);
+	logic [28:0] count;
+	logic [28:0] thresh = 29'd400000000; // Count up to 10s
+	logic [3:0] periods = 4'd6; // Multiply by this to get BPM
+	logic [7:0] numPeaks; 
+
+	always_ff @(posedge clk, posedge reset)
+		begin
+			if (reset)
+				begin
+					numPeaks <= '0;
+					count <= '0;
+				end
+			
+			else if (count < thresh)
+				begin
+					count <= count + 1'b1;
+					always_ff @(posedge foundPeak)
+						begin
+							numPeaks <= numPeaks + 1'b1;
+						end
+				end
+				
+			else
+				begin
+					heartRate <= numPeaks * periods;
+					numPeaks <= '0;
+					count <= '0;
+				end
+			
 	
 // module to find the peaks and troughs of a signal
 module findPeaksAndTroughs(input  logic clk, reset,
-						   input  logic[9:0] inputSignal,
+						   input  logic [9:0] inputSignal,
 						   output logic [9:0] numPeaks, numTroughs);
 						   
 	logic [9:0] pastPast, past, present;
