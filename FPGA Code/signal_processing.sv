@@ -5,7 +5,7 @@
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
 								 //input logic [9:0] voltage,
-								 output logic peakLED);//numPeaks, numTroughs);
+								 output logic peakLED, DACserial, load, LDAC, DACclk);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic foundPeak;
 	logic peak;
@@ -14,7 +14,7 @@ module signal_processing(input logic clk, reset,
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peak);
-	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
+	DAC d1(sck, reset, voltageOutput[9:0], DACserial, load, LDAC, DACclk);
 	assign peakLED = foundPeak;
 endmodule
 
@@ -192,7 +192,7 @@ module DAC(input logic sck, reset,
 		if(count == 0)
 			begin
 				newSignal <= filteredSignal;
-				buffer <= {A,RNG,newSignal};
+				buffer <= {A,RNG,newSignal[7:0]};
 				load <= 1'b1;
 			end
 		else if (count > 0 && count < 4'd12)
