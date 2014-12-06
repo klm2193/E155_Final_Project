@@ -163,20 +163,33 @@ module spi_slave(input logic sck, // from master
 endmodule
 
 /* module for DAC */
-module DAC(input logic clk, reset,
+module DAC(input logic sck, clk, reset,
 		   input logic [9:0] filteredSignal,
 		   output logic DACserial,
 		   output logic load, LDAC, DACclk);
 		   
 	logic [1:0] A = 2'b00;
 	logic RNG = 1'b0;
-	logic [7:0] buffer 
+	logic [7:0] buffer;
+	logic [4:0] count;
+	logic [9:0] newSignal;
 		  
 	always_comb
 		begin
 			LDAC = 1'b'0;
 			DACclk = clk;
 		end
+	
+	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	always_ff @(negedge sck, posedge reset)
+		if (reset)
+			count <= 0;
+		else count <= count + 5'b1;
+		
+	always_ff @(posedge sck)
+		if(count == 0)
+			newSignal <= filteredSignal;
+		
 	
 	always_ff @(posedge clk)
 		begin
