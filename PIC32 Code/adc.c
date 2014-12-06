@@ -9,7 +9,8 @@ void initTimers(void);
 void initspi(void);
 int spi_send_receive(int send);
 void initadc(int channel);
-int readadc(void) ;
+int readadc(void);
+void playNote(unsigned short period, unsigned short duration);
 
 // We want to sample at 200 Hz.
 // Divide clock by 4 (10 MHz clk) and have prescalar of 8.
@@ -103,6 +104,25 @@ int readadc(void) {
 	AD1CON1bits.SAMP = 1; // resume sampling
 	AD1CON1bits.DONE = 0; // clear DONE flag
 	return ADC1BUF0; // return result
+}
+
+// function to play a given note for a certain duration
+void playNote(unsigned short period, unsigned short duration) {
+	
+	TMR1 = 0;	// Reset timers
+	TMR2 = 0;
+	
+	
+	while (TMR1 < duration) {	// Play until note ends
+		if (period != 0) {		// Not a rest, so oscillate
+			PORTFbits.RF0 = 0;	// Output low
+			TMR2 = 0;
+			while (TMR2 < period) {}	// wait
+			PORTFbits.RF0 = 1;	// Output high
+			TMR2 = 0;
+			while (TMR2 < period) {}	// wait
+		}
+	}
 }
 
 int main(void) {
