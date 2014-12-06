@@ -8,11 +8,13 @@ module signal_processing(input logic clk, reset,
 								 output logic peakLED);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic foundPeak;
+	logic peak;
 	logic [9:0] filtered;
 	logic [31:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peakLED);
+	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peak);
+	assign peakLED = foundPeak;
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -236,13 +238,13 @@ module findPeaks(input  logic clk, reset, sck,
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
-				rightSum <= rightSum + newSample - s[49];
-				leftSum <= leftSum + s[49] - s[99];
+				rightSum <= rightSum + newSample - s[63];
+				leftSum <= leftSum + s[64] - s[127];
 				
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
 				// we have a peak  Erg, this is super sketchy!!
-				if ((leftSum <= 10)&& (rightSum >= 40) && !foundPeak)
+				if ((leftSum <= 20)&& (rightSum >= 40) && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= '0;
