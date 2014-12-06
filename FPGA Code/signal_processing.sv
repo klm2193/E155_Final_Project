@@ -246,7 +246,7 @@ module findPeaks(input  logic clk, reset, sck,
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
 				// we have a peak  Erg, this is super sketchy!!
-				if ((leftSum <= 20)&& (rightSum >= 40))// && !foundPeak)
+				if ((leftSum <= 26)&& (rightSum >= 51))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= '0;
