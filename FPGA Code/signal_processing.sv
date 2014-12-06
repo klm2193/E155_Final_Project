@@ -10,12 +10,12 @@ module signal_processing(input logic clk, reset,
 	logic [9:0] filtered;
 	logic [31:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
-	filter f1(clk, reset, sck, {2'b0, voltageOutput[7:0]}, filtered);
+	filter f1(reset, sck, {2'b0, voltageOutput[7:0]}, filtered);
 	assign fpgaReading[7:0] = filtered[7:0];//voltageOutput[7:0];
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
-module filter(input logic clk, reset, sck,
+module filter(input logic reset, sck,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filteredSignal);
 			  
@@ -158,6 +158,26 @@ module spi_slave(input logic sck, // from master
 	assign sdi = (cnt == 0) ? d[31] : qdelayed;
 	
 endmodule
+
+/* module for DAC */
+module DAC(input logic clk, reset,
+		   input logic [9:0] filteredSignal,
+		   output logic DACserial,
+		   output logic load, LDAC DACclk);
+		  
+	always_comb
+		begin
+			LDAC = '0;
+			DACclk = clk;
+		end
+	
+	always_ff @(posedge clk)
+		begin
+			
+		end
+	
+endmodule
+		   
 
 /* module to find the peaks of a signal */
 /* We need to add a counter or something to tell it when to turn the
@@ -348,6 +368,7 @@ module countPeaks(input logic clk, reset, foundPeak,
 					numPeaks <= '0;
 					count <= '0;
 				end
+endmodule
 				
 /* module to get decimal digits from 3-digit decimal number */
 module getDigits(input logic [7:0] heartRate,
