@@ -342,7 +342,7 @@ module multiplexDisplay(input  logic clk, reset,
 						output logic [2:0] disp, multiplex);
 
 	logic [28:0] counter = '0;
-	logic [28:0] thresh = 28'd25000000;
+	logic [28:0] thresh = 28'd300000;
 	
 	// the human eye can only see ~40 fps, so we toggle our display
 	// at a rate above that
