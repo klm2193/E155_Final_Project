@@ -27,13 +27,13 @@ module signal_processing(input logic clk, reset,
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	multiplexDisplay md(clk, reset, disp, multiplex);
-	mux34 m34(heartRate[3:0], heartRate[7:4], heartRate[11:8], multiplex, sevenIn);
+	mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
 	sevenSeg s7(sevenIn, sevenOut);
 	countPeaks cp(sck, reset, foundPeak, heartRate, numPeaks);
 	
-	//assign digit1 = 1;
-	//assign digit2 = 2;
-	//assign digit3 = 3;
+	assign digit1 = 3;
+	assign digit2 = 2;
+	assign digit3 = 1;
 	
 	//assign leds[4:0] = 5'b11111;
 	
