@@ -302,9 +302,10 @@ module findPeaks2(input  logic clk, reset, sck,
 				 output logic newDiff);
 				 
 	logic [3:0] sckcount;
-	logic [9:0] oldSample, newDifference;
-	logic [63:0] s; // shift register (buffer) to track slope change
-	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
+	logic [9:0] oldSample
+	logic [9:0] newDifference;
+	logic [639:0] s; // shift register (buffer) to track slope change
+	logic [31:0] leftSum, rightSum; // sum of left and right half of buffer
 	logic [5:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
@@ -319,38 +320,35 @@ module findPeaks2(input  logic clk, reset, sck,
 		if (reset)
 			begin
 				count <= '0;
-				leftSum <= 32;
-				rightSum <= 32;
+				leftSum <= 0;
+				rightSum <= 0;
 				foundPeak <= '0;
-				s <= {64{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
+				s <= {64{1'b0}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
 			end
 			
 		else if (sckcount == 0)
 			begin
 				oldSample <= newSample;
 				
-				// if the new value is greater than the old value, the
-				// slope is increasing
-				// if the new value is less than the old value, the slope
-				// is decreasing
+				// calculate the y difference between the new and old
+				// samples
 				
-				newDifference <= ~((newSample - oldSample) > 0);
+				newDifference <= newSample - oldSample;
 				
 				// shift in the new indicator bit
-				//s[127:0] <= {s[126:0], newDifference};
 				s <= s << 1;
 				s[0] <= newDifference;
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
-				rightSum <= rightSum + newDifference - s[31];
-				leftSum <= leftSum + s[31] - s[63];
+				rightSum <= rightSum + newDifference - s[319:310];
+				leftSum <= leftSum + s[319:310] - s[639:630];
 				
 				// LED output (for debugging)
 				leftSumLEDS[7:0] <= s[7:0];
 				newDiff <= foundPeak;
 
-				if ((leftSum <= 22) && (rightSum >= 18) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum > 0) && (rightSum < 0) && (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= 7'b1;
