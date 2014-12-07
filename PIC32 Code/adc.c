@@ -7,7 +7,7 @@
 // function prototypes!
 void initTimers(void);
 void initspi(void);
-int spi_send_receive(int send);
+int spi_send_receive(unsigned short send);
 void initadc(int channel);
 int readadc(void);
 void playNote(unsigned short period, unsigned short duration);
@@ -78,11 +78,12 @@ void initspi(void) {
 	SPI2CONbits.MSTEN = 1; // enable master mode
 	SPI2CONbits.CKE = 1; // set clock-to-data timing (data centered on rising SCK edge) 
 	SPI2CONbits.ON = 1; // turn SPI on
-	SPI2CONbits.MODE32 = 1; // use 32-bit mode
+	//SPI2CONbits.MODE32 = 1; // use 32-bit mode
+	SPI2CONbits.MODE16 = 1; // use 32-bit mode
 }
 
 // send and receive via SPI
-int spi_send_receive(int send) {
+int spi_send_receive(unsigned short send) {
 	SPI2BUF = (send); // send data to slave
 	while (!SPI2STATbits.SPIBUSY); // wait until received buffer fills, indicating data received 
 	return SPI2BUF; // return received data and clear the read buffer full
@@ -129,7 +130,7 @@ int main(void) {
 	TRISD = 0xFF00;
 	//TRISB = 0x0000;
 
-	int ADCReadings[10000];
+	unsigned short ADCReadings[10000];
 	int i = 0;
 	
 	// initialize timers and SPI
@@ -138,8 +139,8 @@ int main(void) {
 
 	TMR3 = 0; // Reset timer
 	int duration = 6250;
-	int sample;
-	int received;
+	unsigned short sample;
+	unsigned short received;
 	initadc(2); // use channel 2 (AN2 is RB2)
 
 	while (1) {
@@ -157,6 +158,6 @@ int main(void) {
 		}
 
 		// send data over SPI
-		received = spi_send_receive(sample-150);
+		received = spi_send_receive(sample-300);//(sample-150);
 	}
 }
