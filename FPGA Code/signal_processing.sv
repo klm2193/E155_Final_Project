@@ -29,7 +29,7 @@ module signal_processing(input logic clk, reset,
 	multiplexDisplay md(clk, reset, disp, multiplex);
 	mux34 m34(heartRate[3:0], heartRate[7:4], heartRate[11:8], multiplex, sevenIn);
 	sevenSeg s7(sevenIn, sevenOut);
-	countPeaks cp(clk, reset, foundPeak, heartRate);
+	countPeaks cp(sck, reset, foundPeak, heartRate);
 	
 	//assign digit1 = 1;
 	//assign digit2 = 2;
@@ -454,7 +454,7 @@ endmodule
 
 /* module to count the number of peaks over a certain time period 
    and output the heart rate */
-module countPeaks(input logic clk, reset, foundPeak,
+module countPeaks(input logic sck, reset, foundPeak,
 				  output logic [11:0] heartRate);
 	logic [28:0] count;
 	logic [28:0] thresh = 29'd400000000; // Count up to 10s
@@ -474,14 +474,14 @@ module countPeaks(input logic clk, reset, foundPeak,
 			else if(count < thresh)
 				begin
 					if(~prevFP & foundPeak)
-							numPeaks <= numPeaks + 1;
+						numPeaks <= numPeaks + 1;
 					count <= count + 1'b1;
 				end
 				
 			else
 				begin
 					heartRate <= numPeaks * periods;
-					numPeaks <= '0;
+					//numPeaks <= '0;
 					count <= '0;
 				end
 		end
