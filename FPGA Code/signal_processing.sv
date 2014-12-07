@@ -210,9 +210,9 @@ module findPeaks(input  logic clk, reset, sck,
 				 
 	logic [3:0] sckcount;
 	logic [9:0] oldSample, newDifference;
-	logic [127:0] s; // shift register (buffer) to track slope change
+	logic [63:0] s; // shift register (buffer) to track slope change
 	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
-	logic [6:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
+	logic [5:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset)
@@ -226,10 +226,10 @@ module findPeaks(input  logic clk, reset, sck,
 		if (reset)
 			begin
 				count <= '0;
-				leftSum <= 64;
-				rightSum <= 64;
+				leftSum <= 32;
+				rightSum <= 32;
 				foundPeak <= '0;
-				//s <= {128{1'b0}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
+				s <= {64{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
 			end
 			
 		else if (sckcount == 0)
@@ -250,14 +250,14 @@ module findPeaks(input  logic clk, reset, sck,
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
-				rightSum <= rightSum + newDifference - s[63];
-				leftSum <= leftSum + s[63] - s[127];
+				rightSum <= rightSum + newDifference - s[31];
+				leftSum <= leftSum + s[31] - s[63];
 				
 				// LED output (for debugging)
 				leftSumLEDS[7:0] <= s[7:0];
 				newDiff <= foundPeak;
 
-				if ((leftSum <= 50) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 22) && (rightSum >= 18) && (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= 7'b1;
