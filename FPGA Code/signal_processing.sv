@@ -5,7 +5,8 @@
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
 								 //input logic [9:0] voltage,
-								 output logic peakLED, DACserial, load, LDAC, DACclk);//numPeaks, numTroughs);
+								 output logic peakLED, DACserial, load, LDAC, DACclk,
+								 output logic [7:0]leds);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic foundPeak;
 	logic peak;
@@ -13,9 +14,10 @@ module signal_processing(input logic clk, reset,
 	logic [15:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peak);
+	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, leds);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	assign peakLED = foundPeak;
+	//assign leds[7:0] = leftSum[7:0];
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -47,22 +49,6 @@ module filter(input logic reset, sck,
 	always_comb
 		begin
 	
-			/*a0 = 0.0032;
-			a1 = 0.0039;
-			a2 = 0.0055;
-			a3 = 0.0081;
-			a4 = 0.0119;
-			a5 = 0.0166;
-			a6 = 0.0222;
-			a7 = 0.0285;
-			a8 = 0.0351;
-			a9 = 0.0419;
-			a10 = 0.0484;
-			a11 = 0.0542;
-			a12 = 0.0592;
-			a13 = 0.0630;
-			a14 = 0.0653;
-			a15 = 0.0661;*/
 			
 			// Multiplying by 1024 = 2^10
 			a0 = 3;
@@ -197,16 +183,18 @@ module DAC(input logic sck, reset,
 				buffer <= {A,RNG,filteredSignal[7:0]};
 				load <= 1'b1;
 			end
+			
 		else if (count > 0 && count < 4'd12)
 			begin
 				DACserial <= buffer[10];
 				buffer[10:0] <= {buffer[9:0], 1'b0};
 			end
+			
 		else if (count == 4'd12)
 			load <= 1'b0;
 			
 		else if (count == 4'd13)
-			load <=1'b1;
+			load <= 1'b1;
 	
 endmodule
 		   
@@ -217,7 +205,7 @@ endmodule
 module findPeaks(input  logic clk, reset, sck,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak,
-				 output logic peak);
+				 output logic [7:0] leftSumLEDS);
 				 
 	logic [3:0] sckcount;
 	logic [9:0] oldSample, newDifference;
@@ -237,58 +225,42 @@ module findPeaks(input  logic clk, reset, sck,
 		if (reset)
 			begin
 				count <= '0;
-				leftSum <= '0;
-				rightSum <= '0;
+				leftSum <= 64;
+				rightSum <= 64;
 				peak <= '0;
 				foundPeak <= '0;
-				s <= '0;
+				s <= 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
 			end
-		/*		
-		else if(count == 24'd13000000)
-			begin
-				foundPeak <= 1'b0;
-				count <= '0;
-			end
-		else*/
+			
 		else if (sckcount == 0)
 			begin
 				oldSample <= newSample;
 				
 				// if the new value is greater than the old value, the
 				// slope is increasing
-				if ((newSample - oldSample) > 0)
-					newDifference <= 0;
-				
 				// if the new value is less than the old value, the slope
 				// is decreasing
-				else
-					newDifference <= 1;
-					
+				
+				newDifference <= ~((newSample - oldSample) > 0);
+				
 				// shift in the new indicator bit
 				s <= {s[126:0], newDifference};
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
 				rightSum <= rightSum + newDifference - s[63];
-				leftSum <= leftSum + s[64] - s[127];
+				leftSum <= leftSum + s[63] - s[127];
+				leftSumLEDS[7:0] <= leftSum[7:0];
 				
-				// if 4/5 of the left half are positive slopes
-				// and 4/5 of the right half are negative slopes,
-				// we have a peak  Erg, this is super sketchy!!
-				if ((leftSum <= 26)&& (rightSum >= 20) && (count == 1'b0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 50)&& /*(rightSum >= 100) &&*/ (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
-						count <= 1'b1;
-						peak <= 1'b1;
+						count <= 7'b1;
 					end
 					
 				// increment the counter if peak has been foundPeak
 				else if(foundPeak && (count != 0))// && count != 0)
 					count <= count + 1'b1;
-					
-					/*
-				else if(count == 20)
-					peak <= 1'b0;*/
 					
 				else
 					foundPeak <= 1'b0;
