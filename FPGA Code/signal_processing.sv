@@ -16,7 +16,7 @@ module signal_processing(input logic clk, reset,
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, leds);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
-	assign peakLED = foundPeak;
+
 	//assign leds[7:0] = leftSum[7:0];
 endmodule
 
@@ -251,7 +251,7 @@ module findPeaks(input  logic clk, reset, sck,
 				rightSum <= rightSum + newDifference - s[63];
 				leftSum <= leftSum + s[63] - s[127];
 				leftSumLEDS[7:0] <= leftSum[7:0];
-				
+
 				if ((leftSum <= 50)&& /*(rightSum >= 100) &&*/ (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
