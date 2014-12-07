@@ -24,7 +24,7 @@ module signal_processing(input logic clk, reset,
 	mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
 	sevenSeg s7(sevenIn, sevenOut);
 	
-	assign heartRate = 123;
+	assign heartRate = 88;
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
