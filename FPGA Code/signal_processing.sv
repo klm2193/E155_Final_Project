@@ -23,7 +23,7 @@ module signal_processing(input logic clk, reset,
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, peakLED);
+	findPeaks2 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	multiplexDisplay md(clk, reset, disp, multiplex);
@@ -302,7 +302,7 @@ module findPeaks2(input  logic clk, reset, sck,
 				 output logic newDiff);
 				 
 	logic [3:0] sckcount;
-	logic [9:0] oldSample
+	logic [9:0] oldSample;
 	logic [9:0] newDifference;
 	logic [639:0] s; // shift register (buffer) to track slope change
 	logic [31:0] leftSum, rightSum; // sum of left and right half of buffer
@@ -460,7 +460,7 @@ module countPeaks(input logic sck, reset, foundPeak,
 	logic [7:0] numPeaks; 
 	logic prevFP;
 
-	always_ff @(posedge clk, posedge reset)
+	always_ff @(posedge sck, posedge reset)
 		begin
 			prevFP <= foundPeak;
 			if (reset)
