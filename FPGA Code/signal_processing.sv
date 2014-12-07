@@ -294,6 +294,78 @@ module findPeaks(input  logic clk, reset, sck,
 			//end
 endmodule
 
+/* second module to find the peaks of a signal */
+module findPeaks2(input  logic clk, reset, sck,
+				 input  logic[9:0] newSample,
+				 output logic foundPeak,
+				 output logic [7:0] leftSumLEDS,
+				 output logic newDiff);
+				 
+	logic [3:0] sckcount;
+	logic [9:0] oldSample, newDifference;
+	logic [63:0] s; // shift register (buffer) to track slope change
+	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
+	logic [5:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
+	
+	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	always_ff @(negedge sck, posedge reset)
+		if (reset)
+			sckcount <= 0;
+		else sckcount <= sckcount + 5'b1;
+	
+	// keep track of if the slope is increasing or decreasing
+	always_ff @(posedge sck)
+		
+		if (reset)
+			begin
+				count <= '0;
+				leftSum <= 32;
+				rightSum <= 32;
+				foundPeak <= '0;
+				s <= {64{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
+			end
+			
+		else if (sckcount == 0)
+			begin
+				oldSample <= newSample;
+				
+				// if the new value is greater than the old value, the
+				// slope is increasing
+				// if the new value is less than the old value, the slope
+				// is decreasing
+				
+				newDifference <= ~((newSample - oldSample) > 0);
+				
+				// shift in the new indicator bit
+				//s[127:0] <= {s[126:0], newDifference};
+				s <= s << 1;
+				s[0] <= newDifference;
+				
+				// keep track of the sum of the left and right sides of
+				// the shift register
+				rightSum <= rightSum + newDifference - s[31];
+				leftSum <= leftSum + s[31] - s[63];
+				
+				// LED output (for debugging)
+				leftSumLEDS[7:0] <= s[7:0];
+				newDiff <= foundPeak;
+
+				if ((leftSum <= 22) && (rightSum >= 18) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+					begin
+						foundPeak <= 1'b1;
+						count <= 7'b1;
+					end
+					
+				// increment the counter if peak has been foundPeak
+				else if(foundPeak && (count != 0))// && count != 0)
+					count <= count + 1'b1;
+					
+				else
+					foundPeak <= 1'b0;
+			end
+			//end
+endmodule
+
 /* decoder for the seven segment display
    to display a single hexadecimal digit
    specified by an input s */
