@@ -23,12 +23,15 @@ module signal_processing(input logic clk, reset,
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
-	getDigits gd(heartRate, digit1, digit2, digit3);
-	multiplexDisplay md(clk, reset, disp);
+	//getDigits gd(heartRate, digit1, digit2, digit3);
+	multiplexDisplay md(clk, reset, disp, multiplex);
 	mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
 	sevenSeg s7(sevenIn, sevenOut);
 	
-	assign heartRate = 88;
+	assign digit1 = 1;
+	assign digit2 = 2;
+	assign digit3 = 3;
+	//assign heartRate = 88;
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -330,11 +333,10 @@ endmodule
 /* module to multiplex three seven segment displays based on
    a counter */
 module multiplexDisplay(input  logic clk, reset,
-						output logic [2:0] disp);
+						output logic [2:0] disp, multiplex);
 
 	logic [27:0] counter = '0;
 	logic [27:0] thresh = 28'd250000;
-	logic [2:0] multiplex;
 	
 	// the human eye can only see ~40 fps, so we toggle our display
 	// at a rate above that
