@@ -10,11 +10,11 @@ module signal_processing(input logic clk, reset,
 	logic foundPeak;
 	logic peak;
 	logic [9:0] filtered;
-	logic [31:0] voltageOutput;
+	logic [15:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peak);
-	DAC d1(sck, reset, voltageOutput[9:0], DACserial, load, LDAC, DACclk);
+	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	assign peakLED = foundPeak;
 endmodule
 
@@ -23,7 +23,7 @@ module filter(input logic reset, sck,
 			  input logic [9:0] voltage,
 			  output logic [9:0] filteredSignal);
 			  
-	logic [4:0] count; // count to 32 (it takes 32 cycles to have all
+	logic [3:0] count; // count to 32 (it takes 32 cycles to have all
 					   // of the SPI data
 			  
 	// filter coefficients
@@ -35,7 +35,7 @@ module filter(input logic reset, sck,
 	logic [9:0] v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
 	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
 	
-	logic [31:0] intermediateFiltered;
+	logic [15:0] intermediateFiltered;
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset)
@@ -133,11 +133,11 @@ module spi_slave(input logic sck, // from master
 				 input logic sdo, // from master
 				 output logic sdi, // to master
 				 input logic reset,
-				 input logic [31:0] d, // data to send 
-				 output logic [31:0] q, // data received
-				 output logic [31:0] voltage); // discrete output signal
+				 input logic [15:0] d, // data to send 
+				 output logic [15:0] q, // data received
+				 output logic [15:0] voltage); // discrete output signal
 
-	logic [4:0] cnt; 
+	logic [3:0] cnt; 
 	logic qdelayed;
 
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
@@ -150,16 +150,16 @@ module spi_slave(input logic sck, // from master
 	// loads d at the start, shifts sdo into bottom position on subsequent step 
 	always_ff @(posedge sck)
 		begin
-			q <= (cnt == 0) ? d : {q[30:0], sdo};
-			voltage <= (cnt == 0) ? q[30:0] : voltage;
+			q <= (cnt == 0) ? d : {q[14:0], sdo};
+			voltage <= (cnt == 0) ? q[14:0] : voltage;
 		end
 
 	// align sdi to falling edge of sck
 	// load d at the start
 	always_ff @(negedge sck)
-		qdelayed = q[31];
+		qdelayed = q[15];
 
-	assign sdi = (cnt == 0) ? d[31] : qdelayed;
+	assign sdi = (cnt == 0) ? d[15] : qdelayed;
 	
 endmodule
 
@@ -172,7 +172,7 @@ module DAC(input logic sck, reset,
 	logic [1:0] A = 2'b00;
 	logic RNG = 1'b0;
 	logic [10:0] buffer;
-	logic [4:0] count;
+	logic [3:0] count;
 	logic [9:0] newSignal;
 		  
 	always_comb
@@ -219,7 +219,7 @@ module findPeaks(input  logic clk, reset, sck,
 				 output logic foundPeak,
 				 output logic peak);
 				 
-	logic [4:0] sckcount;
+	logic [3:0] sckcount;
 	logic [9:0] oldSample, newDifference;
 	logic [127:0] s; // shift register (buffer) to track slope change
 	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
@@ -241,7 +241,7 @@ module findPeaks(input  logic clk, reset, sck,
 				rightSum <= '0;
 				peak <= '0;
 				foundPeak <= '0;
-				s <= {50'h3FFFFFFFFFFFF, 50'h000000000000};
+				s <= '0;
 			end
 		/*		
 		else if(count == 24'd13000000)
@@ -275,7 +275,7 @@ module findPeaks(input  logic clk, reset, sck,
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
 				// we have a peak  Erg, this is super sketchy!!
-				if ((leftSum <= 26)&& (rightSum >= 51) && (count == 1'b0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 26)&& (rightSum >= 20) && (count == 1'b0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= 1'b1;
