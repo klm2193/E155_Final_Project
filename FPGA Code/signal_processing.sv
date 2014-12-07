@@ -255,9 +255,9 @@ module findPeaks(input  logic clk, reset, sck,
 				
 				// LED output (for debugging)
 				leftSumLEDS[7:0] <= s[7:0];
-				newDiff <= newDifference;
+				newDiff <= foundPeak;
 
-				if (/*(leftSum <= 50)&& */(rightSum >= 100) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 50) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						count <= 7'b1;
