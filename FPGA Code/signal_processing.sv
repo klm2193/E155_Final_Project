@@ -14,7 +14,7 @@ module signal_processing(input logic clk, reset,
 	logic peak;
 	logic [9:0] filtered;
 	logic [15:0] voltageOutput;
-	logic [7:0] heartRate;
+	logic [11:0] heartRate;
 	logic [3:0]digit1, digit2, digit3;
 	logic [2:0] multiplex;
 	logic [6:0] sevenIn;
@@ -27,17 +27,18 @@ module signal_processing(input logic clk, reset,
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	multiplexDisplay md(clk, reset, disp, multiplex);
-	mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
+	mux34 m34(heartRate[3:0], heartRate[7:4], heartRate[11:8], multiplex, sevenIn);
 	sevenSeg s7(sevenIn, sevenOut);
+	countPeaks cp(clk, reset, foundPeak, heartRate);
 	
-	assign digit1 = 1;
-	assign digit2 = 2;
-	assign digit3 = 3;
+	//assign digit1 = 1;
+	//assign digit2 = 2;
+	//assign digit3 = 3;
 	
 	assign leds[4:0] = 5'b11111;
 	
 	assign leds[7:5] = multiplex;
-	//assign heartRate = 88;
+	//assign heartRate = 123;
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -382,27 +383,27 @@ endmodule
 /* module to count the number of peaks over a certain time period 
    and output the heart rate */
 module countPeaks(input logic clk, reset, foundPeak,
-				  output logic [7:0] heartRate);
+				  output logic [11:0] heartRate);
 	logic [28:0] count;
 	logic [28:0] thresh = 29'd400000000; // Count up to 10s
 	logic [3:0] periods = 4'd6; // Multiply by this to get BPM
 	logic [7:0] numPeaks; 
+	logic prevFP;
 
 	always_ff @(posedge clk, posedge reset)
 		begin
+			prevFP <= foundPeak;
 			if (reset)
 				begin
 					numPeaks <= '0;
 					count <= '0;
 				end
 			
-			else if (count < thresh)
+			else if(count < thresh)
 				begin
+					if(~prevFP & foundPeak)
+							numPeaks <= numPeaks + 1;
 					count <= count + 1'b1;
-					/*always_ff @(posedge foundPeak)
-						begin
-							numPeaks <= numPeaks + 1'b1;
-						end*/
 				end
 				
 			else
@@ -412,6 +413,10 @@ module countPeaks(input logic clk, reset, foundPeak,
 					count <= '0;
 				end
 		end
+		/*always_ff @(posedge foundPeak)
+				begin
+					numPeaks <= numPeaks + 1'b1;
+				end*/
 endmodule
 				
 /* module to get decimal digits from 3-digit decimal number */
@@ -425,8 +430,8 @@ module getDigits(input logic [7:0] heartRate,
 	always_comb
 		begin
 			// Add ones digits and account for overflow
-			sum1 = 1'd1*heartRate[0] + 2'd2*heartRate[1] + 3'd4*heartRate[2] + 3'd8*heartRate[3]
-			+ 3'd6*heartRate[4] + 2'd2*heartRate[5] + 3'd4*heartRate[6] + 3'd8*heartRate[7];
+			sum1 = 1*heartRate[0] + 2*heartRate[1] + 4*heartRate[2] + 8*heartRate[3]
+			+ 6*heartRate[4] + 2*heartRate[5] + 4*heartRate[6] + 8*heartRate[7];
 			overflow30 = sum1 > 5'd29;
 			overflow20 = sum1 > 5'd19 & sum1 < 5'd30;
 			overflow10 = sum1 > 4'd9 & sum1 < 5'd20;
