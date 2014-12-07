@@ -14,7 +14,7 @@ module signal_processing(input logic clk, reset,
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, peak);
-	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
+	DAC d1(sck, reset, voltageOutput[9:0], DACserial, load, LDAC, DACclk);
 	assign peakLED = foundPeak;
 endmodule
 
@@ -177,7 +177,7 @@ module DAC(input logic sck, reset,
 		  
 	always_comb
 		begin
-			LDAC = 1'b0;
+			//LDAC = 1'b0;
 			DACclk = sck;
 		end
 	
@@ -196,17 +196,21 @@ module DAC(input logic sck, reset,
 				//newSignal <= filteredSignal;
 				buffer <= {A,RNG,filteredSignal[7:0]};
 				load <= 1'b1;
+				LDAC <= 1'b1;
 			end
+			
 		else if (count > 0 && count < 4'd12)
 			begin
 				DACserial <= buffer[10];
 				buffer[10:0] <= {buffer[9:0], 1'b0};
 			end
+			
 		else if (count == 4'd12)
 			load <= 1'b0;
 			
-		else if (count == 4'd13)
-			load <=1'b1;
+		else if (count == 4'd13) begin
+			load <= 1'b1;
+			end
 	
 endmodule
 		   
@@ -275,10 +279,10 @@ module findPeaks(input  logic clk, reset, sck,
 				// if 4/5 of the left half are positive slopes
 				// and 4/5 of the right half are negative slopes,
 				// we have a peak  Erg, this is super sketchy!!
-				if ((leftSum <= 26)&& (rightSum >= 20) && (count == 1'b0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum < 0)&& (rightSum >= 100) && (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
-						count <= 1'b1;
+						count <= 7'b1;
 						peak <= 1'b1;
 					end
 					
