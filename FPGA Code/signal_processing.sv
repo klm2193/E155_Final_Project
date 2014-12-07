@@ -19,9 +19,11 @@ module signal_processing(input logic clk, reset,
 	logic [2:0] multiplex;
 	logic [6:0] sevenIn;
 	
+	logic [7:0] dummyLEDs;
+	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds, peakLED);
+	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	multiplexDisplay md(clk, reset, disp, multiplex);
@@ -31,6 +33,10 @@ module signal_processing(input logic clk, reset,
 	assign digit1 = 1;
 	assign digit2 = 2;
 	assign digit3 = 3;
+	
+	assign leds[4:0] = 5'b11111;
+	
+	assign leds[7:5] = multiplex;
 	//assign heartRate = 88;
 endmodule
 
@@ -369,7 +375,7 @@ module multiplexDisplay(input  logic clk, reset,
 			counter <= '0;
 		
 	// choose which 7-segment display to use
-	assign disp = multiplex;
+	assign disp = ~multiplex;
 
 endmodule
 
