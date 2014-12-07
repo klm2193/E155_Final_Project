@@ -177,7 +177,7 @@ module DAC(input logic sck, reset,
 		  
 	always_comb
 		begin
-			//LDAC = 1'b0;
+			LDAC = 1'b0;
 			DACclk = sck;
 		end
 	
@@ -196,7 +196,6 @@ module DAC(input logic sck, reset,
 				//newSignal <= filteredSignal;
 				buffer <= {A,RNG,filteredSignal[7:0]};
 				load <= 1'b1;
-				LDAC <= 1'b1;
 			end
 			
 		else if (count > 0 && count < 4'd12)
@@ -208,9 +207,8 @@ module DAC(input logic sck, reset,
 		else if (count == 4'd12)
 			load <= 1'b0;
 			
-		else if (count == 4'd13) begin
+		else if (count == 4'd13)
 			load <= 1'b1;
-			end
 	
 endmodule
 		   
