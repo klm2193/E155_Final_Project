@@ -457,7 +457,7 @@ endmodule
 module countPeaks(input logic sck, reset, foundPeak,
 				  output logic [11:0] heartRate);
 	logic [28:0] count;
-	logic [28:0] thresh = 29'd400000000; // Count up to 10s
+	logic [28:0] thresh = 12500000; // Count up to 10s
 	logic [3:0] periods = 4'd6; // Multiply by this to get BPM
 	logic [7:0] numPeaks; 
 	logic prevFP;
