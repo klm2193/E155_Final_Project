@@ -6,18 +6,25 @@ module signal_processing(input logic clk, reset,
 								 input  logic sck, sdo, sdi,
 								 //input logic [9:0] voltage,
 								 output logic peakLED, DACserial, load, LDAC, DACclk,
-								 output logic [7:0]leds);//numPeaks, numTroughs);
+								 output logic [7:0] leds,
+								 output logic [2:0] disp,
+								 output logic [6:0] sevenOut);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic foundPeak;
 	logic peak;
 	logic [9:0] filtered;
 	logic [15:0] voltageOutput;
+	logic [7:0] heartRate;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
-
-	//assign leds[7:0] = leftSum[7:0];
+	getDigits gd(heartRate, digit1, digit2, digit3);
+	multiplexDisplay md(clk, reset, disp);
+	mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
+	sevenSeg s7(sevenIn, sevenOut);
+	
+	assign heartRate = 123;
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -303,15 +310,15 @@ endmodule
 
 /* module for a 3 input multiplexer (w/ 4-bit inputs and
    2 bit selector) */
-module mux24(input  logic [3:0] d0, d1, d2,
-			 input  logic s[1:0],
+module mux34(input  logic [3:0] d0, d1, d2,
+			 input  logic [2:0] s,
 			 output logic [3:0] y);
 				
 	always_comb
 		case(s)
-			2'b00: y = d0;
-			2'b01: y = d1;
-			2'b10: y = d2;
+			3'b001: y = d0;
+			3'b010: y = d1;
+			3'b100: y = d2;
 			default y = d0;
 		endcase
 endmodule
@@ -319,11 +326,11 @@ endmodule
 /* module to multiplex three seven segment displays based on
    a counter */
 module multiplexDisplay(input  logic clk, reset,
-						output logic disp1, disp2, disp3);
+						output logic [2:0] disp);
 
 	logic [27:0] counter = '0;
 	logic [27:0] thresh = 28'd250000;
-	logic state1, state2, state3;
+	logic [2:0] multiplex;
 	
 	// the human eye can only see ~40 fps, so we toggle our display
 	// at a rate above that
@@ -331,39 +338,29 @@ module multiplexDisplay(input  logic clk, reset,
 		if (reset)
 			begin
 				counter <= '0;
-				state1 <= '0;
-				state2 <= '0;
-				state3 <= '0;
+				multiplex <= 3'b001;
 			end
 			
 		else if (counter <= thresh)
 			begin
-				state1 <= '1;
-				state2 <= '0;
-				state3 <= '0;
+				multiplex <= 3'b001;
 				counter <= counter + 1'b1;
 			end
 			
 		else if (counter > thresh && counter <= 2*thresh)
 			begin
-				state1 <= '0;
-				state2 <= '1;
-				state3 <= '0;
+				multiplex <= 3'b010;
 				counter <= counter + 1'b1;
 			end
 			
 		else
 			begin
-				state1 <= '0;
-				state2 <= '0;
-				state3 <= '1;
+				multiplex <= 3'b100;
 				counter <= '0;
 			end
 		
 	// choose which 7-segment display to use
-	assign disp1 = state1;
-	assign disp2 = state2;
-	assign disp3 = state3;
+	assign disp = multiplex;
 
 endmodule
 
@@ -413,53 +410,21 @@ module getDigits(input logic [7:0] heartRate,
 	always_comb
 		begin
 			// Add ones digits and account for overflow
-			assign sum1 = 1'd1*heartRate[0] + 2'd2*heartRate[1] + 3'd4*heartRate[2] + 3'd8*heartRate[3]
+			sum1 = 1'd1*heartRate[0] + 2'd2*heartRate[1] + 3'd4*heartRate[2] + 3'd8*heartRate[3]
 			+ 3'd6*heartRate[4] + 2'd2*heartRate[5] + 3'd4*heartRate[6] + 3'd8*heartRate[7];
-			assign overflow30 = sum1 > 5'd29;
-			assign overflow20 = sum1 > 5'd19 & sum1 < 5'd30;
-			assign overflow10 = sum1 > 4'd9 & sum1 < 5'd20;
-			assign digit1 = overflow30*(sum1 - 5'd30) + overflow20*(sum1 - 5'd20) + overflow10*(sum1 - 4'd10)
+			overflow30 = sum1 > 5'd29;
+			overflow20 = sum1 > 5'd19 & sum1 < 5'd30;
+			overflow10 = sum1 > 4'd9 & sum1 < 5'd20;
+			digit1 = overflow30*(sum1 - 5'd30) + overflow20*(sum1 - 5'd20) + overflow10*(sum1 - 4'd10)
 			+ ~(overflow10 + overflow20 + overflow30)*sum1;
 			
 			// Add tens digits and account for overflow
-			assign sum2= 1'd1*heartRate[4] + 2'd3*heartRate[5] + 3'd6*heartRate[6] + 2'd2*heartRate[6]
+			sum2= 1'd1*heartRate[4] + 2'd3*heartRate[5] + 3'd6*heartRate[6] + 2'd2*heartRate[6]
 			+ overflow10 + 2'd2*overflow20 + 2'd3*overflow30;
-			assign overflow100 = sum2 > 7'd99;
-			assign digit2 = overflow100*(sum2 - 7'd100) + !overflow100*sum2;
+			overflow100 = sum2 > 7'd99;
+			digit2 = overflow100*(sum2 - 7'd100) + !overflow100*sum2;
 			
 			// Hundreds digit
-			assign digit3 = heartRate[7] + overflow100;
-		end
-endmodule
-			
-	
-// module to find the peaks and troughs of a signal
-module findPeaksAndTroughs(input  logic clk, reset,
-						   input  logic [9:0] inputSignal,
-						   output logic [9:0] numPeaks, numTroughs);
-						   
-	logic [9:0] pastPast, past, present;
-	
-	always_ff @(posedge clk, posedge reset)
-		begin
-			pastPast <= past;
-			past <= present;
-			
-			if (reset)
-				begin
-					numPeaks <= 0;
-					numTroughs <= 0;
-				end
-			
-			else if ((pastPast < past) && (present < past))
-				numPeaks <= numPeaks + 1;
-				
-			else if ((pastPast > past) && (past < present))
-				numTroughs <= numTroughs + 1;
-			else
-				begin
-					numPeaks <= numPeaks;
-					numTroughs <= numTroughs;
-				end
+			digit3 = heartRate[7] + overflow100;
 		end
 endmodule
