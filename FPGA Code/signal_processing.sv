@@ -14,7 +14,7 @@ module signal_processing(input logic clk, reset,
 	logic [15:0] voltageOutput;
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks peakFinder(clk, reset, sck, voltageOutput[9:0], foundPeak, leds);
+	findPeaks peakFinder(clk, reset, sck, filtered, foundPeak, leds, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 
 	//assign leds[7:0] = leftSum[7:0];
@@ -205,7 +205,8 @@ endmodule
 module findPeaks(input  logic clk, reset, sck,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak,
-				 output logic [7:0] leftSumLEDS);
+				 output logic [7:0] leftSumLEDS,
+				 output logic newDiff);
 				 
 	logic [3:0] sckcount;
 	logic [9:0] oldSample, newDifference;
@@ -227,7 +228,6 @@ module findPeaks(input  logic clk, reset, sck,
 				count <= '0;
 				leftSum <= 64;
 				rightSum <= 64;
-				peak <= '0;
 				foundPeak <= '0;
 				s <= 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
 			end
@@ -251,6 +251,7 @@ module findPeaks(input  logic clk, reset, sck,
 				rightSum <= rightSum + newDifference - s[63];
 				leftSum <= leftSum + s[63] - s[127];
 				leftSumLEDS[7:0] <= leftSum[7:0];
+				newDiff <= newDifference;
 
 				if ((leftSum <= 50)&& /*(rightSum >= 100) &&*/ (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
