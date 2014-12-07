@@ -15,6 +15,10 @@ module signal_processing(input logic clk, reset,
 	logic [9:0] filtered;
 	logic [15:0] voltageOutput;
 	logic [7:0] heartRate;
+	logic [3:0]digit1, digit2, digit3;
+	logic [2:0] multiplex;
+	logic [6:0] sevenIn;
+	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds, peakLED);
