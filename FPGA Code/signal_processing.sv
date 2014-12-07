@@ -23,7 +23,7 @@ module signal_processing(input logic clk, reset,
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks2 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, peakLED);
+	findPeaks2 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds[7:0], peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	multiplexDisplay md(clk, reset, disp, multiplex);
@@ -35,9 +35,9 @@ module signal_processing(input logic clk, reset,
 	//assign digit2 = 2;
 	//assign digit3 = 3;
 	
-	assign leds[4:0] = 5'b11111;
+	//assign leds[4:0] = 5'b11111;
 	
-	assign leds[7:5] = multiplex;
+	//assign leds[7:5] = multiplex;
 	//assign heartRate = 123;
 endmodule
 
@@ -336,16 +336,16 @@ module findPeaks2(input  logic clk, reset, sck,
 				newDifference <= newSample - oldSample;
 				
 				// shift in the new indicator bit
-				s <= s << 1;
-				s[0] <= newDifference;
+				s <= s << 10;
+				s[9:0] <= newDifference;
 				
 				// keep track of the sum of the left and right sides of
 				// the shift register
-				rightSum <= rightSum + newDifference - s[319:310];
+				rightSum <= rightSum + newDifference[9:0] - s[319:310];
 				leftSum <= leftSum + s[319:310] - s[639:630];
 				
 				// LED output (for debugging)
-				leftSumLEDS[7:0] <= s[7:0];
+				leftSumLEDS[7:0] <= leftSum[7:0];
 				newDiff <= foundPeak;
 
 				if ((leftSum > 0) && (rightSum < 0) && (count == 0) && (foundPeak == 0))// && !foundPeak)
