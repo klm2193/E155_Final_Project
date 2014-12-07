@@ -335,8 +335,8 @@ endmodule
 module multiplexDisplay(input  logic clk, reset,
 						output logic [2:0] disp, multiplex);
 
-	logic [27:0] counter = '0;
-	logic [27:0] thresh = 28'd250000;
+	logic [28:0] counter = '0;
+	logic [28:0] thresh = 28'd25000000;
 	
 	// the human eye can only see ~40 fps, so we toggle our display
 	// at a rate above that
@@ -359,11 +359,14 @@ module multiplexDisplay(input  logic clk, reset,
 				counter <= counter + 1'b1;
 			end
 			
-		else
+		else if (counter > 2*thresh && counter <= 3*thresh)
 			begin
 				multiplex <= 3'b100;
-				counter <= '0;
+				counter <= counter + 1'b1;
 			end
+		
+		else if (counter > 3*thresh)
+			counter <= '0;
 		
 	// choose which 7-segment display to use
 	assign disp = multiplex;
