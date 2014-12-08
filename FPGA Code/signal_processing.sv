@@ -18,7 +18,7 @@ module signal_processing(input logic clk, reset,
 	logic [11:0] heartRate;
 	logic [3:0] digit1, digit2, digit3;
 	logic multiplex;
-	logic [6:0] sevenIn;
+	logic [3:0] sevenIn;
 	logic [7:0] numPeaks;
 	logic [7:0] dummyLEDs;
 	
@@ -30,7 +30,7 @@ module signal_processing(input logic clk, reset,
 	//multiplexDisplay md(clk, reset, disp, multiplex);
 	//mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
 	multiplex2Displays chooseDisplay(clk, reset, multiplex, disp1, disp3);
-	mux24 dispMux(digit1, digit3, sevenIn);
+	mux24 dispMux(digit1, digit3, multiplex, sevenIn);
 	sevenSeg s13(sevenIn, seven13);
 	sevenSeg s2(digit2, seven2);
 	countPeaks cp(sck, reset, foundPeak, heartRate, numPeaks);
@@ -449,6 +449,34 @@ endmodule
    to display a single hexadecimal digit
    specified by an input s */
 module sevenSeg(input  logic [3:0] s,
+                output logic [6:0] seg);
+                
+    always_comb
+        case(s)
+            4'b0000: seg = 7'b100_0000; // 0
+            4'b0001: seg = 7'b111_1001; // 1
+            4'b0010: seg = 7'b010_0100; // 2
+            4'b0011: seg = 7'b011_0000; // 3
+            4'b0100: seg = 7'b001_1001; // 4
+            4'b0101: seg = 7'b001_0010; // 5
+            4'b0110: seg = 7'b000_0010; // 6
+            4'b0111: seg = 7'b111_1000; // 7
+            4'b1000: seg = 7'b000_0000; // 8
+            4'b1001: seg = 7'b001_1000; // 9
+            4'b1010: seg = 7'b000_1000; // A
+            4'b1011: seg = 7'b000_0011; // B
+            4'b1100: seg = 7'b010_0111; // C
+            4'b1101: seg = 7'b010_0001; // D
+            4'b1110: seg = 7'b000_0110; // E
+            4'b1111: seg = 7'b000_1110; // F
+            default: seg = 7'b000_0000;
+        endcase
+endmodule
+
+/* decoder for the seven segment display
+   to display a single hexadecimal digit
+   specified by an input s */
+module sevenSeg2(input  logic [3:0] s,
                 output logic [6:0] seg);
                 
     always_comb
