@@ -7,8 +7,9 @@ module signal_processing(input logic clk, reset,
 								 //input logic [9:0] voltage,
 								 output logic peakLED, DACserial, load, LDAC, DACclk,
 								 output logic [7:0] leds,
-								 output logic [2:0] disp,
-								 output logic [6:0] sevenOut);//numPeaks, numTroughs);
+								 //output logic [2:0] disp,
+								 output logic disp1, disp2, disp3,
+								 output logic [6:0] seven13, seven2);//numPeaks, numTroughs);
 	//filter f1(clk, reset, voltage, filtered);
 	logic foundPeak;
 	logic peak;
@@ -16,7 +17,7 @@ module signal_processing(input logic clk, reset,
 	logic [15:0] voltageOutput;
 	logic [11:0] heartRate;
 	logic [3:0] digit1, digit2, digit3;
-	logic [2:0] multiplex;
+	logic multiplex;
 	logic [6:0] sevenIn;
 	logic [7:0] numPeaks;
 	logic [7:0] dummyLEDs;
@@ -26,9 +27,12 @@ module signal_processing(input logic clk, reset,
 	findPeaks128 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
-	multiplexDisplay md(clk, reset, disp, multiplex);
-	mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
-	sevenSeg s7(sevenIn, sevenOut);
+	//multiplexDisplay md(clk, reset, disp, multiplex);
+	//mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
+	multiplex2Displays chooseDisplay(clk, reset, multiplex, disp1, disp3);
+	mux24 dispMux(digit1, digit3, sevenIn);
+	sevenSeg s13(sevenIn, seven13);
+	sevenSeg s2(digit2, seven2);
 	countPeaks cp(sck, reset, foundPeak, heartRate, numPeaks);
 	
 	assign digit1 = 3;
