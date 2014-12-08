@@ -484,6 +484,14 @@ module mux34(input  logic [3:0] d0, d1, d2,
 		endcase
 endmodule
 
+/* module for a 2 input multiplexer (w/ 4-bit inputs) */
+module mux24(input  logic [3:0] d0, d1,
+			 input  logic s,
+			 output logic [3:0] y);
+				
+	assign y = s ? d1 : d0;
+endmodule
+
 /* module to multiplex three seven segment displays based on
    a counter */
 module multiplexDisplay(input  logic clk, reset,
@@ -527,20 +535,55 @@ module multiplexDisplay(input  logic clk, reset,
 
 endmodule
 
+/* module to multiplex two seven segment displays based on
+   a counter */
+module multiplex2Displays(input  logic clk, reset,
+						output logic multiplex, disp1, disp2);
+
+	logic [27:0] counter = '0;
+	logic [27:0] thresh = 28'd250000;
+	
+	// the human eye can only see ~40 fps, so we toggle our display
+	// at a rate above that
+	always_ff @(posedge clk, posedge reset)
+		if (reset)
+			begin
+				counter <= '0;
+				multiplex <= '0;
+			end
+			
+		else if (counter >= thresh)
+			begin
+				counter <='0;
+				multiplex <= ~multiplex;
+			end
+			
+		else
+			begin
+				multiplex <= multiplex;
+				counter <= counter + 1'b1;
+			end
+		
+	// choose which 7-segment display to use
+	assign disp1 = multiplex;
+	assign disp2 = ~multiplex;
+
+endmodule
+
 /* module to count the number of peaks over a certain time period 
    and output the heart rate */
 module countPeaks(input logic sck, reset, foundPeak,
 						output logic [11:0] heartRate,
 						input logic [7:0] numPeaks);
-	logic [24:0] count;
-	logic [24:0] thresh = 12500000; // Count up to 10s
+	logic [28:0] count;
+	logic [28:0] thresh = 12500000; // Count up to 10s
 	logic [3:0] periods = 6; // Multiply by this to get BPM
 	//logic [7:0] numPeaks; 
-	//logic prevFP;
+	logic prevFP;
 
 	always_ff @(posedge sck, posedge reset)
 		begin
-			//prevFP <= foundPeak;
+			prevFP <= foundPeak;
 			if (reset)
 				begin
 					//numPeaks <= '0;
@@ -561,6 +604,10 @@ module countPeaks(input logic sck, reset, foundPeak,
 					//count <= '0;
 				end
 		end
+		/*always_ff @(posedge foundPeak)
+				begin
+					numPeaks <= numPeaks + 1'b1;
+				end*/
 endmodule
 				
 /* module to get decimal digits from 3-digit decimal number */
