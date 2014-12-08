@@ -160,8 +160,7 @@ int main(void) {
 		received = spi_send_receive(sample-300);//(sample-150);
 
 		if (PORTDbits.RD8 == 1) { // we received a pulse!
-			playNote(100, 100);
-
+			playNote(527, 5);
 		}
 	}
 }
