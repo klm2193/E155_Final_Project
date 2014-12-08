@@ -361,7 +361,8 @@ module findPeaks128(input  logic clk, reset, sck,
 				leftSumLEDS[7:0] <= s[7:0];
 				newDiff <= foundPeak;
 
-				if ((leftSum <= 40) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				//if ((leftSum <= 40) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 40) && (rightSum >= 38) && (count == 0) && (foundPeak == 0))
 					begin
 						foundPeak <= 1'b1;
 						numPeaks <= numPeaks + 1;
