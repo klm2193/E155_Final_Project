@@ -21,10 +21,11 @@ module signal_processing(input logic clk, reset,
 	logic [3:0] sevenIn;
 	logic [7:0] numPeaks;
 	logic [7:0] dummyLEDs;
+	logic [28:0] count;
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks128 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
+	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	//multiplexDisplay md(clk, reset, disp, multiplex);
@@ -33,17 +34,17 @@ module signal_processing(input logic clk, reset,
 	mux24 dispMux(digit1, digit3, multiplex, sevenIn);
 	sevenSeg s13(sevenIn, seven13);
 	sevenSeg s2(digit2, seven2);
-	countPeaks cp(sck, reset, foundPeak, heartRate, numPeaks);
+	countPeaks cp(clk, reset, foundPeak, heartRate, numPeaks, count);
 	
-	assign digit1 = 3;
-	assign digit2 = 2;
-	assign digit3 = 1;
+	assign digit1 = heartRate[3:0];
+	assign digit2 = heartRate[7:4];
+	assign digit3 = heartRate[11:8];
 	
 	//assign leds[4:0] = 5'b11111;
 	
 	//assign leds[7:5] = multiplex;
 	//assign heartRate = 123;
-	assign leds[7:0] = numPeaks;
+	assign leds[7:0] = count[28:21];
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -231,7 +232,7 @@ endmodule
 module findPeaks(input  logic clk, reset, sck,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak,
-				 output logic [7:0] leftSumLEDS,
+				 output logic [7:0] leftSumLEDS, numPeaks,
 				 output logic newDiff);
 				 
 	logic [3:0] sckcount;
@@ -255,6 +256,7 @@ module findPeaks(input  logic clk, reset, sck,
 				leftSum <= 32;
 				rightSum <= 32;
 				foundPeak <= '0;
+				numPeaks <= 0;
 				s <= {64{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
 			end
 			
@@ -287,6 +289,7 @@ module findPeaks(input  logic clk, reset, sck,
 					begin
 						foundPeak <= 1'b1;
 						count <= 7'b1;
+						numPeaks <= numPeaks + 1;
 					end
 					
 				// increment the counter if peak has been foundPeak
@@ -358,7 +361,7 @@ module findPeaks128(input  logic clk, reset, sck,
 				leftSumLEDS[7:0] <= s[7:0];
 				newDiff <= foundPeak;
 
-				if ((leftSum <= 55) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 40) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
 					begin
 						foundPeak <= 1'b1;
 						numPeaks <= numPeaks + 1;
@@ -604,16 +607,17 @@ endmodule
 
 /* module to count the number of peaks over a certain time period 
    and output the heart rate */
-module countPeaks(input logic sck, reset, foundPeak,
+module countPeaks(input logic clk, reset, foundPeak,
 						output logic [11:0] heartRate,
-						input logic [7:0] numPeaks);
-	logic [28:0] count;
-	logic [28:0] thresh = 12500000; // Count up to 10s
+						input logic [7:0] numPeaks,
+						output logic [28:0] count);
+	//logic [23:0] count;
+	logic [28:0] thresh = 400000000; // Count up to 10s
 	logic [3:0] periods = 6; // Multiply by this to get BPM
 	//logic [7:0] numPeaks; 
 	logic prevFP;
 
-	always_ff @(posedge sck, posedge reset)
+	always_ff @(posedge clk, posedge reset)
 		begin
 			prevFP <= foundPeak;
 			if (reset)
@@ -636,10 +640,6 @@ module countPeaks(input logic sck, reset, foundPeak,
 					//count <= '0;
 				end
 		end
-		/*always_ff @(posedge foundPeak)
-				begin
-					numPeaks <= numPeaks + 1'b1;
-				end*/
 endmodule
 				
 /* module to get decimal digits from 3-digit decimal number */
