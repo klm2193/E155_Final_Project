@@ -129,6 +129,7 @@ void playNote(unsigned short period, unsigned short duration) {
 int main(void) {
 	TRISD = 0xFF00;
 	//TRISB = 0x0000;
+	TRISG = 0x40; // set RG6 to be an input
 
 	unsigned short ADCReadings[10000];
 	int i = 0;
@@ -159,5 +160,7 @@ int main(void) {
 
 		// send data over SPI
 		received = spi_send_receive(sample-300);//(sample-150);
+
+		if (PORTGbits.RG6 == 1) // we received a pulse!
 	}
 }
