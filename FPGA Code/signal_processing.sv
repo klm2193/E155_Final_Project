@@ -615,18 +615,16 @@ module countPeaks(input logic clk, reset, foundPeak,
 	logic [28:0] thresh = 400000000; // Count up to 10s
 	logic [3:0] periods = 6; // Multiply by this to get BPM
 	//logic [7:0] numPeaks; 
-	logic prevFP;
 
 	always_ff @(posedge clk, posedge reset)
 		begin
-			prevFP <= foundPeak;
 			if (reset)
 				begin
 					//numPeaks <= '0;
 					count <= '0;
 				end
 			
-			else if(count < thresh)
+			else if(numPeaks > 2 && count < thresh)
 				begin
 					//if(~prevFP && foundPeak)
 						//numPeaks <= numPeaks + 1;
@@ -635,7 +633,7 @@ module countPeaks(input logic clk, reset, foundPeak,
 				
 			else if (count == thresh)
 				begin
-					heartRate <= numPeaks * periods;
+					heartRate <= (numPeaks - 3) * periods;
 					count <= count + 1'b1;
 					//numPeaks <= '0;
 					//count <= '0;
@@ -649,24 +647,24 @@ module getDigits(input logic [7:0] heartRate,
 				 // digit1 is LSB
 				 
 				 logic [5:0] sum1, sum2;
-				 logic [4:0] overflow100, overflow30, overflow20, overflow10;
+				 logic overflow100, overflow30, overflow20, overflow10;
 				 
 	always_comb
 		begin
 			// Add ones digits and account for overflow
-			sum1 = 1*heartRate[0] + 2*heartRate[1] + 4*heartRate[2] + 8*heartRate[3]
+			sum1 = heartRate[0] + 2*heartRate[1] + 4*heartRate[2] + 8*heartRate[3]
 			+ 6*heartRate[4] + 2*heartRate[5] + 4*heartRate[6] + 8*heartRate[7];
-			overflow30 = sum1 > 5'd29;
-			overflow20 = sum1 > 5'd19 & sum1 < 5'd30;
-			overflow10 = sum1 > 4'd9 & sum1 < 5'd20;
-			digit1 = overflow30*(sum1 - 5'd30) + overflow20*(sum1 - 5'd20) + overflow10*(sum1 - 4'd10)
-			+ ~(overflow10 + overflow20 + overflow30)*sum1;
+			overflow30 = sum1 > 29;
+			overflow20 = (sum1 > 19) & (sum1 < 30);
+			overflow10 = (sum1 > 9) & (sum1 < 20);
+			digit1 = overflow30*(sum1 - 30) + overflow20*(sum1 - 20) + overflow10*(sum1 - 10)
+			+ ~(overflow10 | overflow20 | overflow30)*sum1;
 			
 			// Add tens digits and account for overflow
-			sum2= 1'd1*heartRate[4] + 2'd3*heartRate[5] + 3'd6*heartRate[6] + 2'd2*heartRate[6]
-			+ overflow10 + 2'd2*overflow20 + 2'd3*overflow30;
-			overflow100 = sum2 > 7'd99;
-			digit2 = overflow100*(sum2 - 7'd100) + !overflow100*sum2;
+			sum2= heartRate[4] + 3*heartRate[5] + 6*heartRate[6] + 2*heartRate[6]
+			+ overflow10 + 2*overflow20 + 3*overflow30;
+			overflow100 = sum2 > 99;
+			digit2 = overflow100*(sum2 - 100) + (~overflow100)*sum2;
 			
 			// Hundreds digit
 			digit3 = heartRate[7] + overflow100;
