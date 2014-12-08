@@ -25,7 +25,7 @@ module signal_processing(input logic clk, reset,
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
+	findPeaks128 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	//multiplexDisplay md(clk, reset, disp, multiplex);
@@ -633,9 +633,10 @@ module countPeaks(input logic clk, reset, foundPeak,
 					count <= count + 1'b1;
 				end
 				
-			else
+			else if (count == thresh)
 				begin
 					heartRate <= numPeaks * periods;
+					count <= count + 1'b1;
 					//numPeaks <= '0;
 					//count <= '0;
 				end
