@@ -24,7 +24,7 @@ module signal_processing(input logic clk, reset,
 	logic [28:0] count;
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
-	filter f1(reset, sck, voltageOutput[9:0], filtered);
+	filter50 f1(reset, sck, voltageOutput[9:0], filtered);
 	findPeaks128_23 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds[7:0], numPeaks, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
@@ -138,6 +138,132 @@ module filter(input logic reset, sck,
 								  a8*(v8+v22) + a9*(v9+v21) + a10*(v10+v20) + a11*(v11+v19) +
 								  a12*(v12+v18) + a13*(v13+v17) + a14*(v14+v16) + a15*v15;
 				filteredSignal <= intermediateFiltered >> 10;				  
+			end
+endmodule
+
+/* module to apply a digital FIR filter to an input signal */
+module filter50(input logic reset, sck,
+			  input logic [9:0] voltage,
+			  output logic [9:0] filteredSignal);
+			  
+	logic [3:0] count; // count to 32 (it takes 32 cycles to have all
+					   // of the SPI data
+			  
+	// filter coefficients
+	logic [31:0] a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10;
+	logic [31:0] a11, a12, a13, a14, a15;
+	
+	// delayed voltage values
+	logic [9:0] v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10;
+	logic [9:0] v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
+	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
+	
+	logic [15:0] intermediateFiltered;
+	
+	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	always_ff @(negedge sck, posedge reset)
+		if (reset)
+			count <= 0;
+		else count <= count + 5'b1;
+	
+	// assign FIR filter coefficients
+	always_comb
+		begin
+	
+			
+			// Multiplying by 2048 = 2^11
+			a0 = 1;
+			a1 = 1;
+			a2 = 2;
+			a3 = 3;
+			a4 = 4;
+			a5 = 6;
+			a6 = 8;
+			a7 = 11;
+			a8 = 14;
+			a9 = 18;
+			a10 = 22;
+			a11 = 27;
+			a12 = 33;
+			a13 = 38;
+			a14 = 44;
+			a15 = 51;
+			a16 = 57;
+			a17 = 63;
+			a18 = 69;
+			a19 = 75;
+			a20 = 80;
+			a21 = 84;
+			a22 = 87;
+			a23 = 90;
+			a24 = 91;
+			a25 = 92;
+		end
+	
+	// shift register to delay the voltage signal
+	always_ff @(posedge sck)
+		if (count == 0)
+			begin
+				v0 <= v1;
+				v1 <= v2;
+				v2 <= v3;
+				v3 <= v4;
+				v4 <= v5;
+				v5 <= v6;
+				v6 <= v7;
+				v7 <= v8;
+				v8 <= v9;
+				v9 <= v10;
+				v10 <= v11;
+				v11 <= v12;
+				v12 <= v13;
+				v13 <= v14;
+				v14 <= v15;
+				v15 <= v16;
+				v16 <= v17;
+				v17 <= v18;
+				v18 <= v19;
+				v19 <= v20;
+				v20 <= v21;
+				v21 <= v22;
+				v22 <= v23;
+				v23 <= v24;
+				v24 <= v25;
+				v26 <= v27;
+				v27 <= v28;
+				v28 <= v29;
+				v29 <= v30;
+				v30 <= v31;
+				v31 <= v32;
+				v32 <= v33;
+				v33 <= v34;
+				v34 <= v35;
+				v35 <= v36;
+				v36 <= v37;
+				v37 <= v38;
+				v38 <= v39;
+				v39 <= v40;
+				v40 <= v41;
+				v41 <= v42;
+				v42 <= v43;
+				v43 <= v44;
+				v44 <= v45;
+				v45 <= v46;
+				v46 <= v47;
+				v47 <= v48;
+				v48 <= v49;
+				v49 <= v50;
+				v50 <= voltage;
+				
+				// calculate the filtered signal
+				intermediateFiltered <= a0*(v0+v50) + a1*(v1+v49) + a2*(v2+v48) + a3*(v3+v47) + 
+								  a4*(v4+v46) + a5*(v5+v45) + a6*(v6+v44) + a7*(v7+v43) + 
+								  a8*(v8+v42) + a9*(v9+v41) + a10*(v10+v40) + a11*(v11+v39) +
+								  a12*(v12+v38) + a13*(v13+v37) + a14*(v14+v36) + a15*(v15+v35)
+								  + a16*(v16+v34) + a17*(v17+v33) + a18*(v18+v32) + a19*(v19+v31)
+								  + a20*(v20+v30) + a21*(v21+v29) +a22*(v22+v28) + a23*(v23+v27)
+								  + a24*(v24+v26) + a25*v25;
+				filteredSignal <= intermediateFiltered >> 11;				  
 			end
 endmodule
 	
