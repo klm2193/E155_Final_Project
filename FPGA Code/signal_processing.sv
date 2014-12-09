@@ -24,8 +24,8 @@ module signal_processing(input logic clk, reset,
 	logic [28:0] count;
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
-	filter50 f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks128_23 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds[7:0], numPeaks, peakLED);
+	filter f1(reset, sck, voltageOutput[9:0], filtered);
+	findPeaks peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds[7:0], numPeaks, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	//multiplexDisplay md(clk, reset, disp, multiplex);
@@ -34,7 +34,7 @@ module signal_processing(input logic clk, reset,
 	mux24 dispMux(digit1, digit3, multiplex, sevenIn);
 	sevenSeg s13(sevenIn, seven13);
 	sevenSeg s2(digit2, seven2);
-	countPeaks cp(clk, reset, foundPeak, heartRate, numPeaks, count);
+	countPeaks64 cp(clk, reset, foundPeak, heartRate, numPeaks, count);
 	
 	assign digit1 = heartRate[3:0];
 	assign digit2 = heartRate[7:4];
@@ -853,6 +853,42 @@ module countPeaks(input logic clk, reset, foundPeak,
 			else if (count == thresh)
 				begin
 					heartRate <= (numPeaks - 3) * periods;
+					count <= count + 1'b1;
+					//numPeaks <= '0;
+					//count <= '0;
+				end
+		end
+endmodule
+
+/* module to count the number of peaks over a certain time period 
+   and output the heart rate */
+module countPeaks64(input logic clk, reset, foundPeak,
+						output logic [11:0] heartRate,
+						input logic [7:0] numPeaks,
+						output logic [28:0] count);
+	//logic [23:0] count;
+	logic [28:0] thresh = 400000000; // Count up to 10s
+	logic [3:0] periods = 6; // Multiply by this to get BPM
+	//logic [7:0] numPeaks; 
+
+	always_ff @(posedge clk, posedge reset)
+		begin
+			if (reset)
+				begin
+					//numPeaks <= '0;
+					count <= '0;
+				end
+			
+			else if(numPeaks > 3 && count < thresh)
+				begin
+					//if(~prevFP && foundPeak)
+						//numPeaks <= numPeaks + 1;
+					count <= count + 1'b1;
+				end
+				
+			else if (count == thresh)
+				begin
+					heartRate <= ((numPeaks - 3) >> 2)* periods;
 					count <= count + 1'b1;
 					//numPeaks <= '0;
 					//count <= '0;
