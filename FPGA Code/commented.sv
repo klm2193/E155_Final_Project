@@ -23,27 +23,29 @@ module signal_processing(input logic clk, reset,
 	logic [7:0] dummyLEDs;
 	logic [28:0] count;
 	
-	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
+	// spi slave to get data from PIC
+	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);
+	
+	// filter to filter input signal from photodiode
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
+	
+	// find and count peaks of the filtered signal
 	findPeaks128 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
+	countPeaks cp(clk, reset, foundPeak, heartRate, numPeaks, count);
+	
+	// output the filtered signal to the DAC for error checking
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
-	//getDigits gd(heartRate, digit1, digit2, digit3);
-	//multiplexDisplay md(clk, reset, disp, multiplex);
-	//mux34 m34(digit1, digit2, digit3, multiplex, sevenIn);
+	
+	// multiplex display 1 and display 3
 	multiplex2Displays chooseDisplay(clk, reset, multiplex, disp1, disp3);
 	mux24 dispMux(digit1, digit3, multiplex, sevenIn);
 	sevenSeg s13(sevenIn, seven13);
 	sevenSeg s2(digit2, seven2);
-	countPeaks cp(clk, reset, foundPeak, heartRate, numPeaks, count);
 	
+	// display the heart rate in hex
 	assign digit1 = heartRate[3:0];
 	assign digit2 = heartRate[7:4];
 	assign digit3 = heartRate[11:8];
-	
-	//assign leds[4:0] = 5'b11111;
-	
-	//assign leds[7:5] = multiplex;
-	//assign heartRate = 123;
 	assign leds[7:0] = count[28:21];
 endmodule
 
@@ -223,8 +225,6 @@ module DAC(input logic sck, reset,
 endmodule
 
 /* module to find the peaks of a signal */
-/* We need to add a counter or something to tell it when to turn the
-   foundPeak bit off. */
 module findPeaks128(input  logic clk, reset, sck,
 				 input  logic[9:0] newSample,
 				 output logic foundPeak,
@@ -237,7 +237,7 @@ module findPeaks128(input  logic clk, reset, sck,
 	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
 	logic [6:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
 	
-	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	// 4-bit counter tracks when 16-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset)
 		if (reset)
 			sckcount <= 0;
@@ -253,7 +253,7 @@ module findPeaks128(input  logic clk, reset, sck,
 				rightSum <= 64;
 				foundPeak <= '0;
 				numPeaks <= 0;
-				s <= {64{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
+				s <= {128{1'b1}};
 			end
 			
 		else if (sckcount == 0)
@@ -264,11 +264,10 @@ module findPeaks128(input  logic clk, reset, sck,
 				// slope is increasing
 				// if the new value is less than the old value, the slope
 				// is decreasing
-				
+				// 0 for increasing slope, 1 for decreasing slope
 				newDifference <= ~((newSample - oldSample) > 0);
 				
 				// shift in the new indicator bit
-				//s[127:0] <= {s[126:0], newDifference};
 				s <= s << 1;
 				s[0] <= newDifference;
 				
@@ -281,7 +280,6 @@ module findPeaks128(input  logic clk, reset, sck,
 				leftSumLEDS[7:0] <= s[7:0];
 				newDiff <= foundPeak;
 
-				//if ((leftSum <= 40) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
 				if ((leftSum <= 40) && (rightSum >= 38) && (count == 0) && (foundPeak == 0))
 					begin
 						foundPeak <= 1'b1;
@@ -290,13 +288,13 @@ module findPeaks128(input  logic clk, reset, sck,
 					end
 					
 				// increment the counter if peak has been foundPeak
-				else if(foundPeak && (count != 0))// && count != 0)
+				else if(foundPeak && (count != 0))
 					count <= count + 1'b1;
-					
+				
+				// wait time is over, turn off foundPeak
 				else
 					foundPeak <= 1'b0;
 			end
-			//end
 endmodule
 
 
@@ -328,98 +326,12 @@ module sevenSeg(input  logic [3:0] s,
         endcase
 endmodule
 
-/* decoder for the seven segment display
-   to display a single hexadecimal digit
-   specified by an input s */
-module sevenSeg2(input  logic [3:0] s,
-                output logic [6:0] seg);
-                
-    always_comb
-        case(s)
-            4'b0000: seg = 7'b100_0000; // 0
-            4'b0001: seg = 7'b111_1001; // 1
-            4'b0010: seg = 7'b010_0100; // 2
-            4'b0011: seg = 7'b011_0000; // 3
-            4'b0100: seg = 7'b001_1001; // 4
-            4'b0101: seg = 7'b001_0010; // 5
-            4'b0110: seg = 7'b000_0010; // 6
-            4'b0111: seg = 7'b111_1000; // 7
-            4'b1000: seg = 7'b000_0000; // 8
-            4'b1001: seg = 7'b001_1000; // 9
-            4'b1010: seg = 7'b000_1000; // A
-            4'b1011: seg = 7'b000_0011; // B
-            4'b1100: seg = 7'b010_0111; // C
-            4'b1101: seg = 7'b010_0001; // D
-            4'b1110: seg = 7'b000_0110; // E
-            4'b1111: seg = 7'b000_1110; // F
-            default: seg = 7'b000_0000;
-        endcase
-endmodule
-
-/* module for a 3 input multiplexer (w/ 4-bit inputs and
-   2 bit selector) */
-module mux34(input  logic [3:0] d0, d1, d2,
-			 input  logic [2:0] s,
-			 output logic [3:0] y);
-				
-	always_comb
-		case(s)
-			3'b001: y = d0;
-			3'b010: y = d1;
-			3'b100: y = d2;
-			default y = d0;
-		endcase
-endmodule
-
 /* module for a 2 input multiplexer (w/ 4-bit inputs) */
 module mux24(input  logic [3:0] d0, d1,
 			 input  logic s,
 			 output logic [3:0] y);
 				
 	assign y = s ? d1 : d0;
-endmodule
-
-/* module to multiplex three seven segment displays based on
-   a counter */
-module multiplexDisplay(input  logic clk, reset,
-						output logic [2:0] disp, multiplex);
-
-	logic [28:0] counter = '0;
-	logic [28:0] thresh = 28'd300000;
-	
-	// the human eye can only see ~40 fps, so we toggle our display
-	// at a rate above that
-	always_ff @(posedge clk, posedge reset)
-		if (reset)
-			begin
-				counter <= '0;
-				multiplex <= 3'b001;
-			end
-			
-		else if (counter <= thresh)
-			begin
-				multiplex <= 3'b001;
-				counter <= counter + 1'b1;
-			end
-			
-		else if (counter > thresh && counter <= 2*thresh)
-			begin
-				multiplex <= 3'b010;
-				counter <= counter + 1'b1;
-			end
-			
-		else if (counter > 2*thresh && counter <= 3*thresh)
-			begin
-				multiplex <= 3'b100;
-				counter <= counter + 1'b1;
-			end
-		
-		else if (counter > 3*thresh)
-			counter <= '0;
-		
-	// choose which 7-segment display to use
-	assign disp = ~multiplex;
-
 endmodule
 
 /* module to multiplex two seven segment displays based on
@@ -463,62 +375,30 @@ module countPeaks(input logic clk, reset, foundPeak,
 						output logic [11:0] heartRate,
 						input logic [7:0] numPeaks,
 						output logic [28:0] count);
-	//logic [23:0] count;
+
 	logic [28:0] thresh = 400000000; // Count up to 10s
 	logic [3:0] periods = 6; // Multiply by this to get BPM
-	//logic [7:0] numPeaks; 
 
 	always_ff @(posedge clk, posedge reset)
 		begin
 			if (reset)
 				begin
-					//numPeaks <= '0;
 					count <= '0;
 				end
 			
+			// increment the counter if we've counted at least two peaks
+			// (the first two are erroneous measurements)
 			else if(numPeaks > 2 && count < thresh)
 				begin
-					//if(~prevFP && foundPeak)
-						//numPeaks <= numPeaks + 1;
 					count <= count + 1'b1;
 				end
 				
+			// if we've reached the threshold, calculate the heart rate
+			// and then stop
 			else if (count == thresh)
 				begin
 					heartRate <= (numPeaks - 3) * periods;
 					count <= count + 1'b1;
-					//numPeaks <= '0;
-					//count <= '0;
 				end
-		end
-endmodule
-				
-/* module to get decimal digits from 3-digit decimal number */
-module getDigits(input logic [7:0] heartRate,
-				 output logic [3:0] digit1, digit2, digit3);
-				 // digit1 is LSB
-				 
-				 logic [5:0] sum1, sum2;
-				 logic overflow100, overflow30, overflow20, overflow10;
-				 
-	always_comb
-		begin
-			// Add ones digits and account for overflow
-			sum1 = heartRate[0] + 2*heartRate[1] + 4*heartRate[2] + 8*heartRate[3]
-			+ 6*heartRate[4] + 2*heartRate[5] + 4*heartRate[6] + 8*heartRate[7];
-			overflow30 = sum1 > 29;
-			overflow20 = (sum1 > 19) & (sum1 < 30);
-			overflow10 = (sum1 > 9) & (sum1 < 20);
-			digit1 = overflow30*(sum1 - 30) + overflow20*(sum1 - 20) + overflow10*(sum1 - 10)
-			+ ~(overflow10 | overflow20 | overflow30)*sum1;
-			
-			// Add tens digits and account for overflow
-			sum2= heartRate[4] + 3*heartRate[5] + 6*heartRate[6] + 2*heartRate[6]
-			+ overflow10 + 2*overflow20 + 3*overflow30;
-			overflow100 = sum2 > 99;
-			digit2 = overflow100*(sum2 - 100) + (~overflow100)*sum2;
-			
-			// Hundreds digit
-			digit3 = heartRate[7] + overflow100;
 		end
 endmodule
