@@ -151,12 +151,15 @@ module filter50(input logic reset, sck,
 			  
 	// filter coefficients
 	logic [31:0] a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10;
-	logic [31:0] a11, a12, a13, a14, a15;
+	logic [31:0] a11, a12, a13, a14, a15, a16, a17, a18, a19, a20;
+	logic [31:0] a21, a22, a23, a24, a25;
 	
 	// delayed voltage values
 	logic [9:0] v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10;
 	logic [9:0] v11, v12, v13, v14, v15, v16, v17, v18, v19, v20;
-	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;	
+	logic [9:0] v21, v22, v23, v24, v25, v26, v27, v28, v29, v30;
+	logic [9:0] v31, v32, v33, v34, v35, v36, v37, v38, v39, v40;
+	logic [9:0] v41, v42, v43, v44, v45, v46, v47, v48, v49, v50;
 	
 	logic [15:0] intermediateFiltered;
 	
