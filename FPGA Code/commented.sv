@@ -4,15 +4,12 @@
 /* signal processing code for FPGA */
 module signal_processing(input logic clk, reset, 
 								 input  logic sck, sdo, sdi,
-								 //input logic [9:0] voltage,
 								 output logic peakLED, DACserial, load, LDAC, DACclk,
 								 output logic [7:0] leds,
-								 //output logic [2:0] disp,
 								 output logic disp1, disp2, disp3,
-								 output logic [6:0] seven13, seven2);//numPeaks, numTroughs);
-	//filter f1(clk, reset, voltage, filtered);
+								 output logic [6:0] seven13, seven2);
+
 	logic foundPeak;
-	logic peak;
 	logic [9:0] filtered;
 	logic [15:0] voltageOutput;
 	logic [11:0] heartRate;
