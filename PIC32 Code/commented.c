@@ -12,8 +12,8 @@ void initadc(int channel);
 int readadc(void);
 void playNote(unsigned short period, unsigned short duration);
 
-// We want to sample at 200 Hz.
-// Divide clock by 4 (10 MHz clk) and have prescalar of 8.
+// We want to sample at 200 Hz
+// Divide clock by 4 (10 MHz clk) and have prescalar of 8
 
 // initialize timers
 void initTimers(void) {
@@ -78,8 +78,7 @@ void initspi(void) {
 	SPI2CONbits.MSTEN = 1; // enable master mode
 	SPI2CONbits.CKE = 1; // set clock-to-data timing (data centered on rising SCK edge) 
 	SPI2CONbits.ON = 1; // turn SPI on
-	//SPI2CONbits.MODE32 = 1; // use 32-bit mode
-	SPI2CONbits.MODE16 = 1; // use 32-bit mode
+	SPI2CONbits.MODE16 = 1; // use 16-bit mode
 }
 
 // send and receive via SPI
@@ -113,7 +112,6 @@ void playNote(unsigned short period, unsigned short duration) {
 	TMR1 = 0;	// Reset timers
 	TMR2 = 0;
 	
-	
 	while (TMR1 < duration) {	// Play until note ends
 		if (period != 0) {		// Not a rest, so oscillate
 			PORTDbits.RD9 = 0;	// Output low
@@ -128,7 +126,7 @@ void playNote(unsigned short period, unsigned short duration) {
 
 int main(void) {
 	TRISD = 0xF100;
-
+	
 	unsigned short ADCReadings[10000];
 	int i = 0;
 	
@@ -156,8 +154,9 @@ int main(void) {
 			i++;
 		}
 
-		// send data over SPI
-		received = spi_send_receive(sample-300);//(sample-150);
+		// send data over SPI (offset the value so it will fall
+		// within the 8 bits for the DAC)
+		received = spi_send_receive(sample-300);
 
 		if (PORTDbits.RD8 == 1) { // we received a pulse!
 			playNote(527, 5);
