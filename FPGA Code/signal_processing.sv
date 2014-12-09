@@ -333,7 +333,7 @@ module findPeaks128(input  logic clk, reset, sck,
 				rightSum <= 64;
 				foundPeak <= '0;
 				numPeaks <= 0;
-				s <= {64{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
+				s <= {128{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
 			end
 			
 		else if (sckcount == 0)
