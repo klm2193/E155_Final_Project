@@ -153,7 +153,7 @@ module spi_slave(input logic sck, // from master
 	logic [3:0] cnt; 
 	logic qdelayed;
 
-	// 5-bit counter tracks when 16-bits is transmitted and new d should be sent
+	// 4-bit counter tracks when 16-bits is transmitted and new d should be sent
 	always_ff @(negedge sck, posedge reset) 
 		if (reset)
 			cnt = 0;
