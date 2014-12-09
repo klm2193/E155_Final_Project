@@ -25,7 +25,7 @@ module signal_processing(input logic clk, reset,
 	
 	spi_slave ss(sck, sdo, sdi, reset, d, q, voltageOutput);//voltage);
 	filter f1(reset, sck, voltageOutput[9:0], filtered);
-	findPeaks128 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, dummyLEDs, numPeaks, peakLED);
+	findPeaks128_23 peakFinder(clk, reset, sck, filtered[9:0], foundPeak, leds[7:0], numPeaks, peakLED);
 	DAC d1(sck, reset, filtered[9:0], DACserial, load, LDAC, DACclk);
 	//getDigits gd(heartRate, digit1, digit2, digit3);
 	//multiplexDisplay md(clk, reset, disp, multiplex);
@@ -44,7 +44,7 @@ module signal_processing(input logic clk, reset,
 	
 	//assign leds[7:5] = multiplex;
 	//assign heartRate = 123;
-	assign leds[7:0] = count[28:21];
+	//assign leds[7:0] = count[28:21];
 endmodule
 
 /* module to apply a digital FIR filter to an input signal */
@@ -314,7 +314,7 @@ module findPeaks128(input  logic clk, reset, sck,
 	logic [3:0] sckcount;
 	logic [9:0] oldSample, newDifference;
 	logic [127:0] s; // shift register (buffer) to track slope change
-	logic [9:0] leftSum, rightSum; // sum of left and right half of buffer
+	logic [6:0] leftSum, rightSum; // sum of left and right half of buffer
 	logic [6:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
 	
 	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
@@ -333,7 +333,7 @@ module findPeaks128(input  logic clk, reset, sck,
 				rightSum <= 64;
 				foundPeak <= '0;
 				numPeaks <= 0;
-				s <= {128{1'b1}};//128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;//'0;
+				s <= {128{1'b1}};
 			end
 			
 		else if (sckcount == 0)
@@ -358,23 +358,112 @@ module findPeaks128(input  logic clk, reset, sck,
 				leftSum <= leftSum + s[63] - s[127];
 				
 				// LED output (for debugging)
-				leftSumLEDS[7:0] <= s[7:0];
+				leftSumLEDS[7:0] <= count[6:0];
 				newDiff <= foundPeak;
 
 				//if ((leftSum <= 40) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
-				if ((leftSum <= 40) && (rightSum >= 38) && (count == 0) && (foundPeak == 0))
+				if ((leftSum <= 40) && (rightSum >= 38) && (foundPeak == 0))
 					begin
-						foundPeak <= 1'b1;
+						foundPeak <= 1;
 						numPeaks <= numPeaks + 1;
-						count <= 7'b1;
+						count <= 1;
 					end
 					
 				// increment the counter if peak has been foundPeak
 				else if(foundPeak && (count != 0))// && count != 0)
-					count <= count + 1'b1;
+					count <= count + 1;
 					
+				else if (foundPeak && (count == 0))
+					begin
+						foundPeak <= 0;
+						count <= 0;
+					end
+				
 				else
-					foundPeak <= 1'b0;
+					foundPeak <= 0;
+			end
+			//end
+endmodule
+
+/* module to find the peaks of a signal */
+/* We need to add a counter or something to tell it when to turn the
+   foundPeak bit off. */
+module findPeaks128_23(input  logic clk, reset, sck,
+				 input  logic[9:0] newSample,
+				 output logic foundPeak,
+				 output logic [7:0] leftSumLEDS, numPeaks,
+				 output logic newDiff);
+				 
+	logic [3:0] sckcount;
+	logic [9:0] oldSample, newDifference;
+	logic [255:0] s; // shift register (buffer) to track slope change
+	logic [7:0] leftSum, rightSum; // sum of left and right half of buffer
+	logic [7:0] count; // 7-bit counter to keep track of how long findPeak should stay high.
+	
+	// 5-bit counter tracks when 32-bits is transmitted and new d should be sent
+	always_ff @(negedge sck, posedge reset)
+		if (reset)
+			sckcount <= 0;
+		else sckcount <= sckcount + 5'b1;
+	
+	// keep track of if the slope is increasing or decreasing
+	always_ff @(posedge sck)
+		
+		if (reset)
+			begin
+				count <= '0;
+				leftSum <= 128;
+				rightSum <= 128;
+				foundPeak <= '0;
+				numPeaks <= 0;
+				s <= {256{1'b1}};
+			end
+			
+		else if (sckcount == 0)
+			begin
+				oldSample <= newSample;
+				
+				// if the new value is greater than the old value, the
+				// slope is increasing
+				// if the new value is less than the old value, the slope
+				// is decreasing
+				
+				newDifference <= ~((newSample - oldSample) > 0);
+				
+				// shift in the new indicator bit
+				//s[127:0] <= {s[126:0], newDifference};
+				s <= s << 1;
+				s[0] <= newDifference;
+				
+				// keep track of the sum of the left and right sides of
+				// the shift register
+				rightSum <= rightSum + newDifference - s[127];
+				leftSum <= leftSum + s[127] - s[255];
+				
+				// LED output (for debugging)
+				leftSumLEDS[7:0] <= count[6:0];
+				newDiff <= foundPeak;
+
+				//if ((leftSum <= 40) && (rightSum >= 40) && (count == 0) && (foundPeak == 0))// && !foundPeak)
+				if ((leftSum <= 60) && (rightSum >= 60) && (foundPeak == 0))
+					begin
+						foundPeak <= 1;
+						numPeaks <= numPeaks + 1;
+						count <= 1;
+					end
+					
+				// increment the counter if peak has been foundPeak
+				else if(foundPeak && (count != 0))// && count != 0)
+					count <= count + 1;
+					
+				else if (foundPeak && (count == 0))
+					begin
+						foundPeak <= 0;
+						count <= 0;
+					end
+				
+				else
+					foundPeak <= 0;
 			end
 			//end
 endmodule
